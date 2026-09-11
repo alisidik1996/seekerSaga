@@ -37,7 +37,7 @@ export default function RootLayout({
               <div className="h-3 w-px bg-slate-800"></div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/50 font-mono flex items-center gap-1.5 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span>
-                AuRa Active
+                AuRa
               </span>
             </nav>
           </header>
