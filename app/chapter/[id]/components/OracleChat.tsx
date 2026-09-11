@@ -8,15 +8,15 @@ interface OracleChatProps {
 }
 
 interface Message {
-  role: "user" | "aura";
+  role: "user" | "oracle";
   text: string;
 }
 
 export default function OracleChat({ chapterTitle, loreFragments }: OracleChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
-      role: "aura",
-      text: `Saya adalah AuRa (Autonomous Reasoning Artificial Intelligence), entitas pengatur semesta SeekerSaga. Dimensi ${chapterTitle} berada dalam kendali algoritma okultisme saya. Sampaikan pertanyaanmu, The Seeker.`
+      role: "oracle",
+      text: `Saya adalah Penjaga Nexus (${chapterTitle}). Ajukan pertanyaan terkait dokumen atau petunjuk yang Anda temukan. Namun ingat, rahasia terdalam hanya terungkap bagi mereka yang cermat menggabungkan bukti.`
     }
   ]);
   const [input, setInput] = useState<string>("");
@@ -38,41 +38,40 @@ export default function OracleChat({ chapterTitle, loreFragments }: OracleChatPr
         body: JSON.stringify({ query: userText, chapterTitle, loreFragments })
       });
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "aura", text: data.reply || "Transmisi komputasi eter terganggu..." }]);
+      setMessages((prev) => [...prev, { role: "oracle", text: data.reply || "Suara dari kegelapan tidak terdengar jelas..." }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "aura", text: "Gangguan koneksi saraf eterik. Coba kembali sesaat lagi." }]);
+      setMessages((prev) => [...prev, { role: "oracle", text: "Gangguan eter mengaburkan transmisi. Coba kembali sesaat lagi." }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-occult-800/90 border border-slate-800 rounded-2xl p-4 flex flex-col h-full shadow-2xl">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+    <div className="bg-occult-800/90 border border-slate-800 rounded-2xl p-6 flex flex-col h-full shadow-2xl">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
         <div>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-purple-400">Autonomous Reasoning AI</span>
-          <h2 className="font-serif text-base font-bold text-slate-100 flex items-center gap-2">
-            <span>🔮</span> AuRa Nexus Core
+          <span className="text-xs font-mono uppercase tracking-widest text-amber-400">RAG Lore Terminal</span>
+          <h2 className="font-serif text-xl font-bold text-slate-100 flex items-center gap-2">
+            <span>🔮</span> Oracle of the Nexus
           </h2>
         </div>
-        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50 flex items-center gap-1 shadow-[0_0_8px_rgba(168,85,247,0.3)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span>
-          AuRa Online
+        <span className="text-[10px] font-mono px-2 py-1 rounded bg-amber-950/40 text-amber-400 border border-amber-800/40">
+          Knowledge Base Active
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 mb-3 max-h-[260px] min-h-[180px]">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4 max-h-[300px] min-h-[220px]">
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`p-2.5 rounded-xl text-xs leading-relaxed ${
+            className={`p-3 rounded-xl text-xs leading-relaxed ${
               m.role === "user"
-                ? "bg-slate-800 border border-slate-700 text-slate-200 ml-4"
-                : "bg-purple-950/30 border border-purple-800/40 text-purple-200 mr-4 font-mono text-[11px]"
+                ? "bg-slate-800 border border-slate-700 text-slate-200 ml-6"
+                : "bg-occult-900 border border-amber-900/40 text-amber-200/90 mr-6 font-serif"
             }`}
           >
-            <div className="text-[9px] font-mono text-slate-500 mb-1 font-bold">
-              {m.role === "user" ? "THE SEEKER" : "🔮 AuRa ENTITY"}
+            <div className="text-[10px] font-mono text-slate-500 mb-1 font-bold">
+              {m.role === "user" ? "THE SEEKER" : "THE ORACLE"}
             </div>
             {m.text}
           </div>

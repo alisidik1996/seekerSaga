@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateVoucherClaimUrl } from "@/lib/crypto";
+import { getChapterConfigs } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -9,12 +10,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Data chapter dan promo code wajib disertakan." }, { status: 400 });
     }
 
-    const claimUrl = generateVoucherClaimUrl(chapterSlug, promoCode);
+    // Check if there is a custom gift URL set in chapter configs
+    const configs = await getChapterConfigs();
+    const chapterCfg = configs[chapterSlug];
+
+    let claimUrl = generateVoucherClaimUrl(chapterSlug, promoCode);
+    if (chapterCfg?.custom_gift_url && chapterCfg.custom_gift_url.trim().length > 0) {
+      claimUrl = chapterCfg.custom_gift_url.trim();
+    }
+
+    const resolvedPromoCode = chapterCfg?.custom_promo_code || promoCode;
 
     return NextResponse.json({
       success: true,
       url: claimUrl,
-      promoCode,
+      promoCode: resolvedPromoCode,
       message: "URL Voucher berhasil dibuat secara resmi.",
     });
   } catch (err: any) {

@@ -67,61 +67,63 @@ export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
       </div>
 
       {activeTab === "dossier" ? (
-        <div className="flex flex-col space-y-4 flex-1">
-          {/* Horizontal Scroll Evidence Pills for Mobile */}
-          <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
-            {evidenceList.map((ev, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+          <div className="space-y-2.5">
+            {evidenceList.map((ev) => (
               <button
                 key={ev.id}
                 onClick={() => setActiveEvidenceId(ev.id)}
-                className={`flex-shrink-0 px-3 py-2 rounded-xl border text-left transition-all ${
+                className={`w-full text-left p-3.5 rounded-xl border transition-all ${
                   activeEvidenceId === ev.id
-                    ? "bg-occult-700 border-amber-500/80 text-slate-100 shadow"
-                    : "bg-occult-900 border-slate-800 text-slate-400 hover:border-slate-700"
+                    ? "bg-occult-700/80 border-amber-500/60 text-slate-100 shadow-md"
+                    : "bg-occult-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
                 }`}
               >
-                <div className="text-[9px] font-mono text-slate-500 flex items-center gap-1.5">
-                  <span>BUKTI 0{idx + 1}</span>
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
+                  <span>{ev.date}</span>
                   <span className="text-red-400 font-bold">{ev.classifiedLevel}</span>
                 </div>
-                <div className="text-xs font-serif font-bold truncate max-w-[120px] text-slate-200 mt-0.5">
+                <div className="text-xs font-serif font-bold truncate text-slate-200">
                   {ev.title}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono mt-1 capitalize">
+                  Tipe: {ev.type}
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="bg-occult-900 rounded-xl p-4 border border-slate-800/80 flex flex-col justify-between dossier-bg space-y-3">
+          <div className="md:col-span-2 bg-occult-900 rounded-xl p-6 border border-slate-800/80 flex flex-col justify-between dossier-bg">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[9px] border border-red-800/40 font-bold">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[10px] border border-red-800/40 font-bold">
                     {activeEvidence.classifiedLevel}
                   </span>
-                  <span className="text-[10px] font-mono text-slate-400">{activeEvidence.date}</span>
+                  <span className="text-xs font-mono text-slate-400">{activeEvidence.date}</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-500">ID: {activeEvidence.id}</span>
+                <span className="text-xs font-mono text-slate-500">ID: {activeEvidence.id}</span>
               </div>
 
-              <h3 className="font-serif text-sm font-bold text-amber-300 mb-2">
+              <h3 className="font-serif text-lg font-bold text-amber-300 mb-4">
                 {activeEvidence.title}
               </h3>
 
-              <div className="text-xs leading-relaxed text-slate-300 bg-occult-800/80 p-3 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono text-[11px] max-h-[220px] overflow-y-auto">
+              <div className="text-sm leading-relaxed text-slate-300 bg-occult-800/80 p-4 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono text-xs">
                 {activeEvidence.content}
               </div>
 
               {activeEvidence.audioHint && (
-                <div className="mt-2.5 p-2.5 rounded-lg bg-red-950/30 border border-red-800/40 text-[11px] font-mono text-red-300 flex items-center gap-1.5">
+                <div className="mt-4 p-3 rounded-lg bg-red-950/30 border border-red-800/40 text-xs font-mono text-red-300 flex items-center gap-2">
                   <span>📻</span>
-                  <span><strong>Spektrogram:</strong> {activeEvidence.audioHint}</span>
+                  <span><strong>Spektrogram Analisis:</strong> {activeEvidence.audioHint}</span>
                 </div>
               )}
             </div>
 
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono text-slate-500">
-              <span>Arsip Bukti Forensik</span>
-              <span>SeekerSaga Bureau</span>
+            <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
+              <span>Arsip Penyelidikan Resmi</span>
+              <span>SeekerSaga Intelligence Bureau</span>
             </div>
           </div>
         </div>
