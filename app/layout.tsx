@@ -35,9 +35,9 @@ export default function RootLayout({
                 <span>📜</span> Chapters
               </Link>
               <div className="h-3 w-px bg-slate-800"></div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800/40 font-mono flex items-center gap-1 animate-pulse">
-                <span className="w-1 h-1 rounded-full bg-red-500"></span>
-                TINAG
+              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/50 font-mono flex items-center gap-1.5 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span>
+                AuRa Active
               </span>
             </nav>
           </header>
@@ -47,9 +47,9 @@ export default function RootLayout({
 
           {/* Occult Mobile Footer */}
           <footer className="border-t border-slate-900 bg-black text-slate-500 text-[10px] py-3.5 px-4 text-center mt-auto">
-            <div className="flex items-center justify-center gap-1.5 mb-0.5 text-slate-400 font-mono">
-              <span>⚔️</span>
-              <span>SeekerSaga © 2026. This Is Not A Game.</span>
+            <div className="flex items-center justify-center gap-1.5 mb-0.5 text-purple-400/80 font-mono">
+              <span>🔮</span>
+              <span>Portal dikendalikan penuh oleh AuRa Entity.</span>
             </div>
             <div className="text-slate-600 font-mono text-[9px]">
               3 Segel Gaib ➔ Peti Relikui Voucher

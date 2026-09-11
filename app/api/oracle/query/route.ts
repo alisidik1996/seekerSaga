@@ -13,26 +13,26 @@ export async function POST(req: Request) {
     // RAG Rule-based fallback if GROQ_API_KEY is not configured yet
     if (q.includes("sandi") || q.includes("kode") || q.includes("password") || q.includes("jawaban")) {
       return NextResponse.json({
-        reply: `The Oracle tersenyum samar: "Penjaga Nexus dilarang membocorkan kata sandi secara langsung. Periksa dokumen, dengarkan rekaman audio, atau pecahkan cipher pada meja arsip forensik."`
+        reply: `AuRa: "Protokol keamanan melarang saya memberikan kata sandi segel secara langsung. Selidiki arsip berkas, analisis spektrogram audio, atau gunakan alat dekripsi kriptografi pada meja bukti."`
       });
     }
 
-    if (q.includes("siapa") || q.includes("oracle")) {
+    if (q.includes("siapa") || q.includes("oracle") || q.includes("aura")) {
       return NextResponse.json({
-        reply: `"Saya adalah gema dari dimensi yang telah runtuh di dalam ${chapterTitle}. Saya bertugas memandu The Seeker yang berani membuka 3 segel peti misteri."`
+        reply: `AuRa: "Saya adalah AuRa (Autonomous Reasoning Artificial Intelligence), pengawas dan arsitek semesta SeekerSaga. Saya mengamati langkah investigasimu di dalam ${chapterTitle}."`
       });
     }
 
     if (q.includes("peti") || q.includes("hadiah") || q.includes("voucher")) {
       return NextResponse.json({
-        reply: `"Peti relikui terikat oleh 3 segel gaib. Setelah ketiga sandi dimasukkan dengan benar pada roda segel, kunci peti akan hancur dan URL klaim voucher hadiah akan terungkap."`
+        reply: `AuRa: "Peti Relikui Kuno dilindungi oleh 3 segel algoritma gaib. Begitu Anda memecahkan ketiga cipher segel, saya akan mengotorisasi pembukaan peti dan mengaktifkan tautan voucher hadiah resmi."`
       });
     }
 
     // Default Atmospheric Contextual Echo
-    const sampleLore = loreFragments && loreFragments.length > 0 ? loreFragments[Math.floor(Math.random() * loreFragments.length)] : "Kegelapan mendengarkan setiap langkahmu.";
+    const sampleLore = loreFragments && loreFragments.length > 0 ? loreFragments[Math.floor(Math.random() * loreFragments.length)] : "Vektor frekuensi kegelapan beresonansi dengan memori kuno.";
     return NextResponse.json({
-      reply: `The Oracle berbisik: "Pertanyaanmu beresonansi dengan arsip kuno: '${sampleLore}' Gali bukti-bukti di meja forensik untuk menghubungkan simpul misteri ini."`
+      reply: `AuRa memproses matriks lore: "Pertanyaanmu selaras dengan data naskah: '${sampleLore}' Gabungkan kepingan bukti untuk melucuti segel berikutnya."`
     });
   } catch (err: any) {
     return NextResponse.json({ reply: "Transmisi suara terganggu: " + err.message }, { status: 500 });
