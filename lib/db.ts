@@ -86,7 +86,7 @@ export async function getChapterConfigs() {
       const configs: Record<string, any> = { ...memoryChapterConfigs };
       res.rows.forEach(r => {
         configs[r.chapter_slug] = {
-          is_locked: r.is_locked,
+          is_locked: Boolean(r.is_locked),
           unlock_at: r.unlock_at ? new Date(r.unlock_at).toISOString() : null,
           custom_gift_url: r.custom_gift_url,
           custom_promo_code: r.custom_promo_code,
@@ -115,19 +115,25 @@ export async function updateChapterConfig(slug: string, data: {
          VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
          ON CONFLICT (chapter_slug)
          DO UPDATE SET 
-           is_locked = COALESCE($2, chapter_configs.is_locked),
-           unlock_at = $3,
-           custom_gift_url = $4,
-           custom_promo_code = $5,
+           is_locked = EXCLUDED.is_locked,
+           unlock_at = EXCLUDED.unlock_at,
+           custom_gift_url = EXCLUDED.custom_gift_url,
+           custom_promo_code = EXCLUDED.custom_promo_code,
            updated_at = CURRENT_TIMESTAMP`,
-        [slug, data.is_locked ?? false, data.unlock_at || null, data.custom_gift_url || null, data.custom_promo_code || null]
+        [
+          slug, 
+          data.is_locked !== undefined ? data.is_locked : false, 
+          data.unlock_at || null, 
+          data.custom_gift_url || null, 
+          data.custom_promo_code || null
+        ]
       );
     } catch (err) {
       console.error('Error updating chapter_configs:', err);
     }
   }
   memoryChapterConfigs[slug] = {
-    is_locked: data.is_locked ?? memoryChapterConfigs[slug]?.is_locked ?? false,
+    is_locked: data.is_locked !== undefined ? data.is_locked : memoryChapterConfigs[slug]?.is_locked ?? false,
     unlock_at: data.unlock_at !== undefined ? data.unlock_at : memoryChapterConfigs[slug]?.unlock_at ?? null,
     custom_gift_url: data.custom_gift_url !== undefined ? data.custom_gift_url : memoryChapterConfigs[slug]?.custom_gift_url ?? null,
     custom_promo_code: data.custom_promo_code !== undefined ? data.custom_promo_code : memoryChapterConfigs[slug]?.custom_promo_code ?? null,

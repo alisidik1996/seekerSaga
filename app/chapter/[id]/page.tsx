@@ -87,9 +87,6 @@ export default function ChapterDetailPage() {
           <Link href="/" className="text-[11px] font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors">
             <span>⬅️</span> Portal
           </Link>
-          <div className="flex items-center gap-2 text-[10px] font-mono">
-            <span className="text-slate-400 truncate max-w-[150px]">{chapter.location}</span>
-          </div>
         </div>
 
         {/* Chapter Title Mini Dossier */}
