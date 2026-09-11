@@ -88,10 +88,7 @@ export default function ChapterDetailPage() {
             <span>⬅️</span> Portal
           </Link>
           <div className="flex items-center gap-2 text-[10px] font-mono">
-            <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700">
-              {chapter.era}
-            </span>
-            <span className="text-slate-400 truncate max-w-[120px]">{chapter.location}</span>
+            <span className="text-slate-400 truncate max-w-[150px]">{chapter.location}</span>
           </div>
         </div>
 

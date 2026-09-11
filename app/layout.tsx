@@ -3,8 +3,13 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SeekerSaga — The Occult Nexus & Cosmic Horror Portal",
-  description: "Antologi petualangan interaktif horor okultisme dan cosmic horror. Buka 3 segel misteri untuk mengklaim peti relikui voucher.",
+  title: "SeekerSaga — Under the Gaze of AuRa",
+  description: "Portal misteri okultisme dan cosmic horror.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

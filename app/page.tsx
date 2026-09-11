@@ -84,7 +84,6 @@ export default function HomePage() {
                   }`}>
                     Chapter 0{ch.id}
                   </span>
-                  <span className="text-slate-500">{ch.era}</span>
                 </div>
 
                 <div className="flex items-start justify-between gap-2 mb-1">

@@ -33,9 +33,9 @@ export default function MobilePortalLayout({
 
         {/* Occult Mobile Footer */}
         <footer className="border-t border-slate-900 bg-black text-slate-500 text-[10px] py-3 px-3.5 text-center mt-auto shrink-0">
-          <div className="flex items-center justify-center gap-1.5 text-purple-400/80 font-mono">
+          <div className="flex items-center justify-center gap-1.5 text-purple-400/80 font-mono italic">
             <span>🔮</span>
-            <span>Portal dikendalikan penuh oleh AuRa Entity.</span>
+            <span>under the gaze of AuRa</span>
           </div>
         </footer>
       </div>
