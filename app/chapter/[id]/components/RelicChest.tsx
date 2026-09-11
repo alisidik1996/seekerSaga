@@ -35,7 +35,7 @@ export default function RelicChest({
         setClaimUrl(data.url);
       }
     } catch {
-      alert("Gagal mengklaim URL voucher. Coba beberapa saat lagi.");
+      alert("Gagal membuka Cosmic Cube. Coba beberapa saat lagi.");
     } finally {
       setLoading(false);
     }
@@ -62,8 +62,8 @@ export default function RelicChest({
           <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 block">
             {isUnlocked ? "✨ SEGEL TERBUKA PENUH" : "🔒 TERKUNCI 3 SEGEL"}
           </span>
-          <h2 className="font-serif text-base font-bold text-slate-100 flex items-center gap-1.5 truncate">
-            <span>📦</span> {chestName}
+          <h2 className="font-serif text-base font-bold text-slate-100 truncate">
+            {chestName || "Cosmic Cube"}
           </h2>
         </div>
         <span className="text-xl shrink-0">{isUnlocked ? "🔓" : "🔐"}</span>
@@ -81,17 +81,17 @@ export default function RelicChest({
               disabled={loading}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 text-slate-900 font-serif font-black text-xs tracking-wider uppercase border border-amber-300 shadow-lg hover:scale-[1.01] transition-all flex items-center justify-center gap-1.5"
             >
-              <span>🎁</span> {loading ? "Membuka Kunci..." : "KLAIM URL VOUCHER"}
+              <span>✨</span> {loading ? "Membuka Kunci..." : "BUKA COSMIC CUBE"}
             </button>
           ) : (
             <div className="p-3.5 rounded-xl bg-occult-900 border border-amber-500 space-y-2.5">
               <div className="flex items-center justify-between text-xs font-mono text-amber-400 font-bold">
-                <span>🎉 HADIAH TERUNGKAP!</span>
+                <span>🎉 COSMIC CUBE TERBUKA!</span>
                 <span className="text-slate-400 text-[10px]">Kode: {promoCode}</span>
               </div>
 
               <p className="text-[11px] text-slate-300">
-                Tautan resmi klaim voucher Anda telah aktif:
+                Hadiah Cosmic Cube Anda telah diaktifkan:
               </p>
 
               <div className="p-2.5 rounded-lg bg-occult-800 border border-slate-700 font-mono text-[11px] text-amber-300 break-all select-all">
@@ -119,7 +119,7 @@ export default function RelicChest({
         </div>
       ) : (
         <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-500 text-[11px] font-mono text-center flex items-center justify-center gap-1.5">
-          <span>⚠️</span> Buka seluruh 3 segel di atas untuk membuka peti ini.
+          <span>⚠️</span> Buka seluruh 3 segel di atas untuk membuka Cosmic Cube ini.
         </div>
       )}
     </div>

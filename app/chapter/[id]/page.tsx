@@ -167,7 +167,7 @@ export default function ChapterDetailPage() {
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                📂 Berkas Bukti ({chapter.evidence.length})
+                📜 Hieroglyphs ({chapter.evidence.length})
               </button>
             </div>
 

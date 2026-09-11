@@ -1,4 +1,4 @@
-﻿export interface Seal {
+export interface Seal {
   number: number;
   name: string;
   cipher: string; // The correct password (case-insensitive)
@@ -46,8 +46,8 @@ export const CHAPTERS: Chapter[] = [
     location: "Blackwater Cove, Pesisir Karang Hitam",
     era: "Oktober 1974 / Masa Kini",
     atmosphericDescription: "Desa nelayan mati yang diselimuti kabut asin abadi. Di bawah reruntuhan mercusuar, bisikan entitas palung samudra terdengar setiap kali air laut pasang surut.",
-    relicChestName: "Peti Kayu Hanyut Terkutuk (The Driftwood Reliquary)",
-    relicChestDescription: "Peti kayu purba berlapis lumut karang laut dalam, terikat oleh 3 segel air garam yang mengunci relikui hadiah.",
+    relicChestName: "Cosmic Cube",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
     voucherPromoCode: "SEEKER-COVEN-LEVIATHAN-77",
     seals: [
       {
@@ -56,7 +56,7 @@ export const CHAPTERS: Chapter[] = [
         cipher: "PALUNG_ABADI",
         hint: "Ditemukan dari analisis koordinat maritim dan nyanyian rintihan penjaga mercusuar gila.",
         sourceType: "gps_coordinates",
-        sourceHint: "Periksa Laporan Forensik Mercusuar No. 74 di Meja Bukti."
+        sourceHint: "Periksa Laporan Hieroglyphs No. 74 di Meja Forensik."
       },
       {
         number: 2,
@@ -104,7 +104,7 @@ export const CHAPTERS: Chapter[] = [
     ],
     loreFragments: [
       "Kultus Karang Hitam telah berdiri sejak abad ke-17 di teluk terpencil ini.",
-      "Tiga segel air asin diciptakan untuk mengunci Peti Hanyut agar rahasia sang Leviathan tidak dicuri manusia luar.",
+      "Tiga segel air asin diciptakan untuk mengunci Cosmic Cube agar rahasia sang Leviathan tidak dicuri manusia luar.",
       "Setiap kata sandi segel adalah sumpah darah para pemuja palung terdalam."
     ]
   },
@@ -117,8 +117,8 @@ export const CHAPTERS: Chapter[] = [
     location: "Biara Saint Morbus, Puncak Tebing Gersang",
     era: "Abad Pertengahan / Dimensi Hampa",
     atmosphericDescription: "Biara batu hitam di mana para rahib mencungkil mata mereka sendiri demi menyembah entitas kosmik tanpa rupa dari kegelapan abadi.",
-    relicChestName: "Sarkofagus Marmer Obsidian (The Obsidian Reliquary)",
-    relicChestDescription: "Sarkofagus batu hitam legam berukirkan litani tanpa kata, menyegel berkas suci dan voucher klaim rahasia.",
+    relicChestName: "Cosmic Cube",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
     voucherPromoCode: "SEEKER-MONASTERY-VOID-99",
     seals: [
       {
@@ -175,7 +175,7 @@ export const CHAPTERS: Chapter[] = [
     loreFragments: [
       "Biarawan Saint Morbus meyakini bahwa indera penglihatan manusia adalah ilusi yang menghalangi kehadiran dewa kosmik sejati.",
       "Tiga segel biara dipasang oleh Uskup Agung sebelum ia melompat ke dalam jurang hampa.",
-      "Hanya mereka yang memahami filsafat kehampaan yang dapat membuka sarkofagus marmer."
+      "Hanya mereka yang memahami filsafat kehampaan yang dapat membuka Cosmic Cube."
     ]
   },
   {
@@ -187,8 +187,8 @@ export const CHAPTERS: Chapter[] = [
     location: "Sanatorium Jiwa Ravenscroft, Lembah Rawa Gambut",
     era: "November 1912 / Sisa Garis Waktu",
     atmosphericDescription: "Rumah sakit jiwa terpencil di tengah rawa gambut. Jeritan para pasien tertanam di dalam dinding batu dan rekaman silinder lilin fonograf tua.",
-    relicChestName: "Peti Besi Terikat Rantai Eter (The Chained Iron Chest)",
-    relicChestDescription: "Peti besi berlapis perak murni yang diikat rantai dingin, tempat Dokter Alistair menyembunyikan kunci dimensi dan voucher.",
+    relicChestName: "Cosmic Cube",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
     voucherPromoCode: "SEEKER-ASYLUM-RAVENSCROFT-33",
     seals: [
       {
@@ -245,7 +245,7 @@ export const CHAPTERS: Chapter[] = [
     loreFragments: [
       "Sanatorium Ravenscroft didirikan di atas titik persimpangan leydisik energi kosmik.",
       "Dr. Alistair menggunakan metode psiko-okultisme untuk memancing kesadaran dimensi luar masuk ke dalam pikiran manusia.",
-      "Peti besi berantai adalah benteng pertahanan terakhir yang mencegah kutukan menyebar ke kota."
+      "Cosmic Cube adalah wadah energi eter yang mencegah kutukan menyebar."
     ]
   }
 ];
