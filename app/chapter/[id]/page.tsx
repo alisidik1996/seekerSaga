@@ -14,19 +14,31 @@ export default function ChapterDetailPage() {
   const params = useParams();
   const slug = params?.id as string;
 
-  const chapter = CHAPTERS.find((c) => c.slug === slug || c.id === slug) || CHAPTERS[0];
+  const defaultChapter = CHAPTERS.find((c) => c.slug === slug || c.id === slug) || CHAPTERS[0];
 
   const [unlockedSeals, setUnlockedSeals] = useState<number[]>([]);
   const [activeScreenTab, setActiveScreenTab] = useState<"seals" | "evidence">("seals");
   const [chapterConfig, setChapterConfig] = useState<any>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
+  // Local storage session key to support local resets
+  const storageKey = `seekersaga_unlocked_${defaultChapter.slug}`;
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setUnlockedSeals(JSON.parse(saved));
+      }
+    } catch (e) {}
+  }, [storageKey]);
+
   const fetchConfig = async () => {
     try {
       const res = await fetch("/api/chapters/status");
       const data = await res.json();
-      if (data.configs && data.configs[chapter.slug]) {
-        setChapterConfig(data.configs[chapter.slug]);
+      if (data.configs && data.configs[defaultChapter.slug]) {
+        setChapterConfig(data.configs[defaultChapter.slug]);
       }
     } catch (e) {
       console.error("Failed to fetch chapter config", e);
@@ -37,7 +49,14 @@ export default function ChapterDetailPage() {
 
   useEffect(() => {
     fetchConfig();
-  }, [chapter.slug]);
+  }, [defaultChapter.slug]);
+
+  // Merge dynamic config with defaults
+  const effectiveTitle = chapterConfig?.custom_title || defaultChapter.title;
+  const effectiveLatinTitle = chapterConfig?.custom_latin_title || defaultChapter.latinTitle;
+  const effectiveDescription = chapterConfig?.custom_description || defaultChapter.atmosphericDescription;
+  const effectiveSeals = chapterConfig?.custom_seals || defaultChapter.seals;
+  const effectiveEvidence = chapterConfig?.custom_evidence || defaultChapter.evidence;
 
   const isLocked = () => {
     if (!chapterConfig) return false;
@@ -56,7 +75,7 @@ export default function ChapterDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chapterSlug: chapter.slug,
+          chapterSlug: defaultChapter.slug,
           sealNumber,
           cipher,
         }),
@@ -64,7 +83,11 @@ export default function ChapterDetailPage() {
       const data = await res.json();
       if (data.valid) {
         if (!unlockedSeals.includes(sealNumber)) {
-          setUnlockedSeals((prev) => [...prev, sealNumber]);
+          const nextState = [...unlockedSeals, sealNumber];
+          setUnlockedSeals(nextState);
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(nextState));
+          } catch (e) {}
         }
         return { success: true, message: data.message || "Segel berhasil dibuka!" };
       } else {
@@ -73,6 +96,13 @@ export default function ChapterDetailPage() {
     } catch {
       return { success: false, message: "Gangguan komunikasi ke server okultis." };
     }
+  };
+
+  const handleLocalReset = () => {
+    setUnlockedSeals([]);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) {}
   };
 
   const isAllUnlocked = unlockedSeals.length >= 3;
@@ -86,6 +116,14 @@ export default function ChapterDetailPage() {
           <Link href="/" className="text-[11px] font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors">
             <span>⬅️</span> Portal
           </Link>
+          {unlockedSeals.length > 0 && (
+            <button
+              onClick={handleLocalReset}
+              className="text-[10px] font-mono text-red-400 hover:underline flex items-center gap-1"
+            >
+              <span>🔄</span> Ulangi Bab
+            </button>
+          )}
         </div>
 
         {/* Chapter Title Mini Dossier */}
@@ -101,13 +139,13 @@ export default function ChapterDetailPage() {
             )}
           </div>
           <h1 className="font-serif text-base font-bold text-slate-100">
-            {chapter.title}
+            {effectiveTitle}
           </h1>
           <div className="text-[11px] text-red-400 font-serif italic mt-0.5">
-            "{chapter.latinTitle}"
+            "{effectiveLatinTitle}"
           </div>
           <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
-            {chapter.atmosphericDescription}
+            {effectiveDescription}
           </p>
         </div>
 
@@ -147,7 +185,7 @@ export default function ChapterDetailPage() {
           </div>
         ) : (
           <>
-            {/* 2-Segmented Screen Tab Switcher (Seals & Evidence) */}
+            {/* 2-Segmented Screen Tab Switcher */}
             <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
               <button
                 onClick={() => setActiveScreenTab("seals")}
@@ -167,7 +205,7 @@ export default function ChapterDetailPage() {
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                📜 Hieroglyphs ({chapter.evidence.length})
+                📜 Hieroglyphs ({effectiveEvidence.length})
               </button>
             </div>
 
@@ -176,24 +214,24 @@ export default function ChapterDetailPage() {
               {activeScreenTab === "seals" && (
                 <div className="space-y-3.5">
                   <SealWheel
-                    seals={chapter.seals}
+                    seals={effectiveSeals}
                     unlockedSeals={unlockedSeals}
                     onUnlockSeal={handleUnlockSeal}
                     isAllUnlocked={isAllUnlocked}
                   />
 
                   <RelicChest
-                    chestName={chapter.relicChestName}
-                    chestDescription={chapter.relicChestDescription}
+                    chestName={defaultChapter.relicChestName}
+                    chestDescription={defaultChapter.relicChestDescription}
                     isUnlocked={isAllUnlocked}
-                    chapterSlug={chapter.slug}
-                    promoCode={chapterConfig?.custom_promo_code || chapter.voucherPromoCode}
+                    chapterSlug={defaultChapter.slug}
+                    promoCode={chapterConfig?.custom_promo_code || defaultChapter.voucherPromoCode}
                   />
                 </div>
               )}
 
               {activeScreenTab === "evidence" && (
-                <EvidenceBoard evidenceList={chapter.evidence} />
+                <EvidenceBoard evidenceList={effectiveEvidence} />
               )}
             </div>
           </>

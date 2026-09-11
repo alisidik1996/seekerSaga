@@ -30,7 +30,7 @@ export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {evidenceList.map((ev, idx) => (
             <button
-              key={ev.id}
+              key={ev.id || idx}
               onClick={() => setActiveEvidenceId(ev.id)}
               className={`px-2.5 py-1.5 rounded-lg border text-left text-xs font-mono shrink-0 transition-all ${
                 activeEvidenceId === ev.id
@@ -44,29 +44,46 @@ export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
         </div>
 
         {/* Dossier Content Viewer */}
-        <div className="bg-occult-900 rounded-xl p-3.5 border border-slate-800/80 dossier-bg space-y-2.5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[9px] border border-red-800/40 font-bold">
-              {activeEvidence.classifiedLevel}
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">{activeEvidence.date}</span>
-          </div>
-
-          <h3 className="font-serif text-sm font-bold text-amber-300">
-            {activeEvidence.title}
-          </h3>
-
-          <div className="text-[11px] leading-relaxed text-slate-300 bg-occult-800/80 p-3 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono break-words">
-            {activeEvidence.content}
-          </div>
-
-          {activeEvidence.audioHint && (
-            <div className="p-2.5 rounded-lg bg-red-950/30 border border-red-800/40 text-[10px] font-mono text-red-300 flex items-start gap-1.5 break-words">
-              <span className="shrink-0">📻</span>
-              <span><strong>Spektrogram:</strong> {activeEvidence.audioHint}</span>
+        {activeEvidence ? (
+          <div className="bg-occult-900 rounded-xl p-3.5 border border-slate-800/80 dossier-bg space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[9px] border border-red-800/40 font-bold">
+                {activeEvidence.classifiedLevel || "RESTRICTED"}
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">{activeEvidence.date}</span>
             </div>
-          )}
-        </div>
+
+            <h3 className="font-serif text-sm font-bold text-amber-300">
+              {activeEvidence.title}
+            </h3>
+
+            {/* Hieroglyph Image Support */}
+            {activeEvidence.mediaUrl && (
+              <div className="my-2 rounded-xl overflow-hidden border border-slate-700 bg-black/60 max-h-52 flex items-center justify-center">
+                <img
+                  src={activeEvidence.mediaUrl}
+                  alt={activeEvidence.title}
+                  className="w-full h-auto max-h-52 object-contain hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+
+            <div className="text-[11px] leading-relaxed text-slate-300 bg-occult-800/80 p-3 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono break-words">
+              {activeEvidence.content}
+            </div>
+
+            {activeEvidence.audioHint && (
+              <div className="p-2.5 rounded-lg bg-red-950/30 border border-red-800/40 text-[10px] font-mono text-red-300 flex items-start gap-1.5 break-words">
+                <span className="shrink-0">📻</span>
+                <span><strong>Spektrogram:</strong> {activeEvidence.audioHint}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-xs text-slate-500 font-mono">
+            Belum ada Hieroglyphs yang ditambahkan.
+          </div>
+        )}
       </div>
     </div>
   );

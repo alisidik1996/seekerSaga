@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { getChapterConfigs } from "@/lib/db";
 import { CHAPTERS } from "@/data/chapters";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function POST(req: Request) {
   try {
@@ -14,13 +18,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: false, message: "Chapter tidak ditemukan." }, { status: 404 });
     }
 
-    const seal = chapter.seals.find((s) => s.number === Number(sealNumber));
+    // Check live configs for custom seals first
+    const configs = await getChapterConfigs();
+    const liveCfg = configs[chapter.slug] || {};
+    const effectiveSeals = liveCfg.custom_seals || chapter.seals;
+
+    const seal = effectiveSeals.find((s: any) => Number(s.number) === Number(sealNumber));
     if (!seal) {
       return NextResponse.json({ valid: false, message: "Segel tidak ditemukan." }, { status: 404 });
     }
 
     const cleanInput = String(cipher).trim().toUpperCase().replace(/\s+/g, "_");
-    const cleanTarget = seal.cipher.trim().toUpperCase().replace(/\s+/g, "_");
+    const cleanTarget = String(seal.cipher).trim().toUpperCase().replace(/\s+/g, "_");
 
     if (cleanInput === cleanTarget || cleanInput.replace(/_/g, "") === cleanTarget.replace(/_/g, "")) {
       return NextResponse.json({

@@ -67,6 +67,10 @@ export default function HomePage() {
             const locked = isChapterLocked(ch);
             const hasCountdown = cfg?.unlock_at && new Date(cfg.unlock_at).getTime() > new Date().getTime();
 
+            const title = cfg?.custom_title || ch.title;
+            const latinTitle = cfg?.custom_latin_title || ch.latinTitle;
+            const description = cfg?.custom_description || ch.atmosphericDescription;
+
             return (
               <div
                 key={ch.id}
@@ -88,7 +92,7 @@ export default function HomePage() {
 
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h2 className="font-serif text-base font-bold text-slate-100">
-                    {ch.title.split(": ")[1] || ch.title}
+                    {title.includes(": ") ? title.split(": ")[1] : title}
                   </h2>
                   {locked && (
                     <span className="shrink-0 px-2 py-0.5 rounded text-[9px] font-mono bg-red-950 text-red-400 border border-red-800/60 flex items-center gap-1 uppercase font-bold">
@@ -98,11 +102,11 @@ export default function HomePage() {
                 </div>
 
                 <div className="text-[11px] text-red-400/80 font-serif italic mb-2">
-                  "{ch.latinTitle}"
+                  "{latinTitle}"
                 </div>
 
                 <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                  {ch.atmosphericDescription}
+                  {description}
                 </p>
 
                 {locked && hasCountdown ? (

@@ -54,8 +54,18 @@ export async function initDbSchema() {
       + 'unlock_at TIMESTAMP WITH TIME ZONE,'
       + 'custom_gift_url TEXT,'
       + 'custom_promo_code VARCHAR(100),'
+      + 'custom_title TEXT,'
+      + 'custom_latin_title TEXT,'
+      + 'custom_description TEXT,'
+      + 'custom_seals JSONB,'
+      + 'custom_evidence JSONB,'
       + 'updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP'
-      + ');';
+      + ');'
+      + 'ALTER TABLE chapter_configs ADD COLUMN IF NOT EXISTS custom_title TEXT;'
+      + 'ALTER TABLE chapter_configs ADD COLUMN IF NOT EXISTS custom_latin_title TEXT;'
+      + 'ALTER TABLE chapter_configs ADD COLUMN IF NOT EXISTS custom_description TEXT;'
+      + 'ALTER TABLE chapter_configs ADD COLUMN IF NOT EXISTS custom_seals JSONB;'
+      + 'ALTER TABLE chapter_configs ADD COLUMN IF NOT EXISTS custom_evidence JSONB;';
 
     await client.query(ddl);
   } catch (err) {
@@ -71,10 +81,45 @@ export const memoryChapterConfigs: Record<string, {
   unlock_at: string | null;
   custom_gift_url: string | null;
   custom_promo_code: string | null;
+  custom_title: string | null;
+  custom_latin_title: string | null;
+  custom_description: string | null;
+  custom_seals: any[] | null;
+  custom_evidence: any[] | null;
 }> = {
-  "1-the-drowned-coven": { is_locked: false, unlock_at: null, custom_gift_url: null, custom_promo_code: null },
-  "2-the-blind-monastery": { is_locked: true, unlock_at: "2026-10-01T00:00:00Z", custom_gift_url: null, custom_promo_code: null },
-  "3-the-whispering-asylum": { is_locked: true, unlock_at: "2026-10-15T00:00:00Z", custom_gift_url: null, custom_promo_code: null }
+  "1-the-drowned-coven": {
+    is_locked: false,
+    unlock_at: null,
+    custom_gift_url: null,
+    custom_promo_code: null,
+    custom_title: null,
+    custom_latin_title: null,
+    custom_description: null,
+    custom_seals: null,
+    custom_evidence: null,
+  },
+  "2-the-blind-monastery": {
+    is_locked: true,
+    unlock_at: "2026-10-01T00:00:00Z",
+    custom_gift_url: null,
+    custom_promo_code: null,
+    custom_title: null,
+    custom_latin_title: null,
+    custom_description: null,
+    custom_seals: null,
+    custom_evidence: null,
+  },
+  "3-the-whispering-asylum": {
+    is_locked: true,
+    unlock_at: "2026-10-15T00:00:00Z",
+    custom_gift_url: null,
+    custom_promo_code: null,
+    custom_title: null,
+    custom_latin_title: null,
+    custom_description: null,
+    custom_seals: null,
+    custom_evidence: null,
+  }
 };
 
 export async function getChapterConfigs() {
@@ -90,6 +135,11 @@ export async function getChapterConfigs() {
           unlock_at: r.unlock_at ? new Date(r.unlock_at).toISOString() : null,
           custom_gift_url: r.custom_gift_url,
           custom_promo_code: r.custom_promo_code,
+          custom_title: r.custom_title || null,
+          custom_latin_title: r.custom_latin_title || null,
+          custom_description: r.custom_description || null,
+          custom_seals: r.custom_seals || null,
+          custom_evidence: r.custom_evidence || null,
         };
       });
       return configs;
@@ -105,27 +155,45 @@ export async function updateChapterConfig(slug: string, data: {
   unlock_at?: string | null;
   custom_gift_url?: string | null;
   custom_promo_code?: string | null;
+  custom_title?: string | null;
+  custom_latin_title?: string | null;
+  custom_description?: string | null;
+  custom_seals?: any[] | null;
+  custom_evidence?: any[] | null;
 }) {
   const pool = getDbPool();
   if (pool) {
     try {
       await initDbSchema();
       await pool.query(
-        `INSERT INTO chapter_configs (chapter_slug, is_locked, unlock_at, custom_gift_url, custom_promo_code, updated_at)
-         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+        `INSERT INTO chapter_configs (
+           chapter_slug, is_locked, unlock_at, custom_gift_url, custom_promo_code,
+           custom_title, custom_latin_title, custom_description, custom_seals, custom_evidence, updated_at
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
          ON CONFLICT (chapter_slug)
          DO UPDATE SET 
            is_locked = EXCLUDED.is_locked,
            unlock_at = EXCLUDED.unlock_at,
            custom_gift_url = EXCLUDED.custom_gift_url,
            custom_promo_code = EXCLUDED.custom_promo_code,
+           custom_title = EXCLUDED.custom_title,
+           custom_latin_title = EXCLUDED.custom_latin_title,
+           custom_description = EXCLUDED.custom_description,
+           custom_seals = EXCLUDED.custom_seals,
+           custom_evidence = EXCLUDED.custom_evidence,
            updated_at = CURRENT_TIMESTAMP`,
         [
           slug, 
           data.is_locked !== undefined ? data.is_locked : false, 
           data.unlock_at || null, 
           data.custom_gift_url || null, 
-          data.custom_promo_code || null
+          data.custom_promo_code || null,
+          data.custom_title || null,
+          data.custom_latin_title || null,
+          data.custom_description || null,
+          data.custom_seals ? JSON.stringify(data.custom_seals) : null,
+          data.custom_evidence ? JSON.stringify(data.custom_evidence) : null,
         ]
       );
     } catch (err) {
@@ -137,6 +205,25 @@ export async function updateChapterConfig(slug: string, data: {
     unlock_at: data.unlock_at !== undefined ? data.unlock_at : memoryChapterConfigs[slug]?.unlock_at ?? null,
     custom_gift_url: data.custom_gift_url !== undefined ? data.custom_gift_url : memoryChapterConfigs[slug]?.custom_gift_url ?? null,
     custom_promo_code: data.custom_promo_code !== undefined ? data.custom_promo_code : memoryChapterConfigs[slug]?.custom_promo_code ?? null,
+    custom_title: data.custom_title !== undefined ? data.custom_title : memoryChapterConfigs[slug]?.custom_title ?? null,
+    custom_latin_title: data.custom_latin_title !== undefined ? data.custom_latin_title : memoryChapterConfigs[slug]?.custom_latin_title ?? null,
+    custom_description: data.custom_description !== undefined ? data.custom_description : memoryChapterConfigs[slug]?.custom_description ?? null,
+    custom_seals: data.custom_seals !== undefined ? data.custom_seals : memoryChapterConfigs[slug]?.custom_seals ?? null,
+    custom_evidence: data.custom_evidence !== undefined ? data.custom_evidence : memoryChapterConfigs[slug]?.custom_evidence ?? null,
   };
   return memoryChapterConfigs[slug];
+}
+
+export async function resetChapterProgress(slug: string) {
+  const pool = getDbPool();
+  if (pool) {
+    try {
+      await initDbSchema();
+      await pool.query('DELETE FROM seeker_sessions WHERE chapter_slug = $1', [slug]);
+      await pool.query('DELETE FROM claimed_vouchers WHERE chapter_slug = $1', [slug]);
+    } catch (err) {
+      console.error('Error resetting chapter progress:', err);
+    }
+  }
+  return { success: true, message: `Progres chapter ${slug} berhasil direset.` };
 }

@@ -4,12 +4,32 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import CountdownTimer from "../components/CountdownTimer";
 
+interface SealData {
+  number: number;
+  name: string;
+  cipher: string;
+  hint: string;
+  sourceType: string;
+  sourceHint: string;
+}
+
+interface EvidenceData {
+  id: string;
+  title: string;
+  type: string;
+  date: string;
+  classifiedLevel: string;
+  content: string;
+  mediaUrl?: string;
+  audioHint?: string;
+}
+
 interface ChapterAdminData {
   id: number;
   slug: string;
   title: string;
   latinTitle: string;
-  era: string;
+  description: string;
   location: string;
   is_locked: boolean;
   unlock_at: string | null;
@@ -17,6 +37,8 @@ interface ChapterAdminData {
   custom_promo_code: string | null;
   default_promo_code: string;
   relicChestName: string;
+  seals: SealData[];
+  evidence: EvidenceData[];
 }
 
 export default function AdminControlPage() {
@@ -28,11 +50,18 @@ export default function AdminControlPage() {
 
   // Form states per chapter slug
   const [forms, setForms] = useState<Record<string, {
+    title: string;
+    latinTitle: string;
+    description: string;
     is_locked: boolean;
     unlock_at: string;
     custom_gift_url: string;
     custom_promo_code: string;
+    seals: SealData[];
+    evidence: EvidenceData[];
   }>>({});
+
+  const [activeTab, setActiveTab] = useState<Record<string, "general" | "seals" | "hieroglyphs">>({});
 
   const fetchChapters = async (key: string) => {
     setLoading(true);
@@ -43,15 +72,23 @@ export default function AdminControlPage() {
       if (data.chapters) {
         setChapters(data.chapters);
         const formInit: Record<string, any> = {};
+        const tabsInit: Record<string, any> = {};
         data.chapters.forEach((c: ChapterAdminData) => {
           formInit[c.slug] = {
+            title: c.title,
+            latinTitle: c.latinTitle,
+            description: c.description,
             is_locked: c.is_locked,
             unlock_at: c.unlock_at ? c.unlock_at.slice(0, 16) : "",
             custom_gift_url: c.custom_gift_url || "",
             custom_promo_code: c.custom_promo_code || c.default_promo_code || "",
+            seals: JSON.parse(JSON.stringify(c.seals || [])),
+            evidence: JSON.parse(JSON.stringify(c.evidence || [])),
           };
+          tabsInit[c.slug] = "general";
         });
         setForms(formInit);
+        setActiveTab(tabsInit);
         setIsAuthenticated(true);
       } else {
         setStatusMsg({ text: "Gagal memuat data chapter.", error: true });
@@ -82,6 +119,63 @@ export default function AdminControlPage() {
     }));
   };
 
+  const handleSealChange = (slug: string, index: number, field: keyof SealData, value: any) => {
+    setForms((prev) => {
+      const updatedSeals = [...(prev[slug]?.seals || [])];
+      if (updatedSeals[index]) {
+        updatedSeals[index] = { ...updatedSeals[index], [field]: value };
+      }
+      return {
+        ...prev,
+        [slug]: { ...prev[slug], seals: updatedSeals },
+      };
+    });
+  };
+
+  const handleEvidenceChange = (slug: string, index: number, field: keyof EvidenceData, value: any) => {
+    setForms((prev) => {
+      const updatedEv = [...(prev[slug]?.evidence || [])];
+      if (updatedEv[index]) {
+        updatedEv[index] = { ...updatedEv[index], [field]: value };
+      }
+      return {
+        ...prev,
+        [slug]: { ...prev[slug], evidence: updatedEv },
+      };
+    });
+  };
+
+  const handleAddEvidence = (slug: string) => {
+    setForms((prev) => {
+      const currentEv = prev[slug]?.evidence || [];
+      const newIndex = currentEv.length + 1;
+      const newEvItem: EvidenceData = {
+        id: `ev-${slug.slice(0, 3)}-${Date.now().toString().slice(-3)}`,
+        title: `Hieroglyph #${newIndex}`,
+        type: "document",
+        date: "Dimensi Waktu",
+        classifiedLevel: "RESTRICTED",
+        content: "Teks prasasti hieroglyph baru...",
+        mediaUrl: "",
+        audioHint: "",
+      };
+      return {
+        ...prev,
+        [slug]: { ...prev[slug], evidence: [...currentEv, newEvItem] },
+      };
+    });
+  };
+
+  const handleRemoveEvidence = (slug: string, index: number) => {
+    setForms((prev) => {
+      const updatedEv = prev[slug]?.evidence.filter((_, i) => i !== index) || [];
+      return {
+        ...prev,
+        [slug]: { ...prev[slug], evidence: updatedEv },
+      };
+    });
+  };
+
   const handleSaveChapter = async (slug: string) => {
     const chapterData = forms[slug];
     if (!chapterData) return;
@@ -99,6 +193,11 @@ export default function AdminControlPage() {
           unlock_at: chapterData.unlock_at ? new Date(chapterData.unlock_at).toISOString() : null,
           custom_gift_url: chapterData.custom_gift_url.trim() || null,
           custom_promo_code: chapterData.custom_promo_code.trim() || null,
+          custom_title: chapterData.title.trim() || null,
+          custom_latin_title: chapterData.latinTitle.trim() || null,
+          custom_description: chapterData.description.trim() || null,
+          custom_seals: chapterData.seals,
+          custom_evidence: chapterData.evidence,
         }),
       });
 
@@ -116,6 +215,36 @@ export default function AdminControlPage() {
     }
   };
 
+  const handleResetProgress = async (slug: string) => {
+    if (!confirm(`Apakah Anda yakin ingin me-reset seluruh progres pemain untuk chapter "${slug}"? Sesi klaim dan status segel akan dikosongkan.`)) {
+      return;
+    }
+
+    setLoading(true);
+    setStatusMsg(null);
+    try {
+      const res = await fetch("/api/admin/chapters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin,
+          chapterSlug: slug,
+          action: "reset",
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setStatusMsg({ text: `🔄 ${result.message}` });
+      } else {
+        setStatusMsg({ text: `❌ ${result.error || "Gagal mereset chapter."}`, error: true });
+      }
+    } catch (e) {
+      setStatusMsg({ text: "Gagal terhubung ke server untuk reset.", error: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-slate-200 flex flex-col font-sans">
       {/* Admin Top Navigation Header */}
@@ -128,7 +257,7 @@ export default function AdminControlPage() {
                 SEEKER<span className="text-purple-400">SAGA</span> ADMIN
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/60">
-                AuRa Control Nexus
+                AuRa Master Nexus
               </span>
             </div>
           </Link>
@@ -182,7 +311,7 @@ export default function AdminControlPage() {
                 Otoritas Pengendali Dimensi
               </h2>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Masukkan Master PIN Otoritas AuRa untuk mengakses konsol manajemen chapter, countdown release, dan gift voucher link.
+                Masukkan Master PIN Otoritas AuRa untuk mengakses konsol manajemen chapter, kata sandi 3 segel, Hieroglyphs gambar, cerita, dan URL hadiah.
               </p>
             </div>
 
@@ -216,10 +345,10 @@ export default function AdminControlPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
               <div>
                 <h1 className="font-serif text-2xl font-black text-slate-100 flex items-center gap-2.5">
-                  <span>🏛️</span> Manajemen Dimensi & Voucher Hadiah
+                  <span>🏛️</span> Pengendali Semesta & Master Sandi SeekerSaga
                 </h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  Atur kuncian chapter, tanggal rilis otomatis dengan countdown timer, dan tautan custom gift voucher.
+                  Ubah judul, cerita, kata sandi tiap segel, berkas Hieroglyphs dengan gambar, countdown release, dan link Cosmic Cube.
                 </p>
               </div>
 
@@ -233,22 +362,28 @@ export default function AdminControlPage() {
               </div>
             </div>
 
-            {/* Chapters Grid View (Responsive: 1 col on mobile, 2 col on md, 3 col on xl) */}
+            {/* Chapters Grid View (1 col on mobile, 2 col on md, 3 col on xl) */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {chapters.map((ch) => {
                 const formData = forms[ch.slug] || {
+                  title: ch.title,
+                  latinTitle: ch.latinTitle,
+                  description: ch.description,
                   is_locked: ch.is_locked,
                   unlock_at: "",
                   custom_gift_url: "",
                   custom_promo_code: "",
+                  seals: ch.seals || [],
+                  evidence: ch.evidence || [],
                 };
+                const currentTab = activeTab[ch.slug] || "general";
 
                 return (
                   <div
                     key={ch.slug}
                     className="rounded-3xl border border-slate-800 bg-occult-900/90 p-5 space-y-4 shadow-xl flex flex-col justify-between hover:border-slate-700 transition-all"
                   >
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Chapter Card Header */}
                       <div className="flex items-start justify-between border-b border-slate-800 pb-3 gap-2">
                         <div>
@@ -256,116 +391,289 @@ export default function AdminControlPage() {
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700 font-bold">
                               CHAPTER 0{ch.id}
                             </span>
-                            <span className="text-xs text-slate-400 font-mono">{ch.era}</span>
                           </div>
                           <h3 className="font-serif text-base font-bold text-slate-100 leading-snug">
-                            {ch.title}
+                            {formData.title}
                           </h3>
-                          <div className="text-xs text-red-400 font-serif italic mt-0.5">
-                            "{ch.latinTitle}"
-                          </div>
                         </div>
 
-                        <span
-                          className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border ${
-                            formData.is_locked
-                              ? "bg-red-950/80 text-red-400 border-red-800"
-                              : "bg-emerald-950/80 text-emerald-400 border-emerald-800"
-                          }`}
-                        >
-                          {formData.is_locked ? "🔒 Terkunci" : "🔓 Terbuka"}
-                        </span>
-                      </div>
-
-                      {/* Controls Area */}
-                      <div className="space-y-3.5 text-xs font-mono">
-                        {/* Lock / Unlock Toggle */}
-                        <div className="flex items-center justify-between bg-occult-950 p-3 rounded-2xl border border-slate-800">
-                          <div>
-                            <span className="text-slate-200 font-bold block">Status Akses</span>
-                            <span className="text-[10px] text-slate-500">
-                              {formData.is_locked ? "Pemain terhalang tabir gaib" : "Dapat dimainkan bebas"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleFieldChange(ch.slug, "is_locked", !formData.is_locked)
-                            }
-                            className={`px-4 py-1.5 rounded-xl font-mono text-xs font-bold border transition-all ${
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span
+                            className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border ${
                               formData.is_locked
-                                ? "bg-red-900/80 text-red-200 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
-                                : "bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200"
+                                ? "bg-red-950/80 text-red-400 border-red-800"
+                                : "bg-emerald-950/80 text-emerald-400 border-emerald-800"
                             }`}
                           >
-                            {formData.is_locked ? "🔒 TERKUNCI" : "🔓 TERBUKA"}
-                          </button>
-                        </div>
-
-                        {/* Automatic Countdown Unlock Date */}
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] uppercase text-slate-400 font-bold flex items-center justify-between">
-                            <span>⏳ Countdown Release Date:</span>
-                            <span className="text-[10px] text-slate-500 lowercase">(buka otomatis)</span>
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={formData.unlock_at}
-                            onChange={(e) =>
-                              handleFieldChange(ch.slug, "unlock_at", e.target.value)
-                            }
-                            className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                          />
-                          {formData.unlock_at && (
-                            <div className="mt-2">
-                              <CountdownTimer targetDate={new Date(formData.unlock_at).toISOString()} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Custom Gift URL */}
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] uppercase text-slate-400 font-bold flex items-center justify-between">
-                            <span>🎁 Custom Gift / Voucher URL:</span>
-                            <span className="text-[10px] text-slate-500 lowercase">(menimpa token SHA)</span>
-                          </label>
-                          <input
-                            type="url"
-                            value={formData.custom_gift_url}
-                            onChange={(e) =>
-                              handleFieldChange(ch.slug, "custom_gift_url", e.target.value)
-                            }
-                            placeholder="https://example.com/voucher/claim?code=SECRET"
-                            className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-
-                        {/* Custom Promo Code */}
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] uppercase text-slate-400 font-bold">
-                            🏷️ Custom Promo Code:
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.custom_promo_code}
-                            onChange={(e) =>
-                              handleFieldChange(ch.slug, "custom_promo_code", e.target.value)
-                            }
-                            placeholder={ch.default_promo_code}
-                            className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                          />
+                            {formData.is_locked ? "🔒 Terkunci" : "🔓 Terbuka"}
+                          </span>
                         </div>
                       </div>
+
+                      {/* Sub-Tab Navigation for Chapter Editor */}
+                      <div className="grid grid-cols-3 gap-1 p-1 bg-occult-950 rounded-xl border border-slate-800 text-[11px] font-mono">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "general" }))}
+                          className={`py-1.5 rounded-lg text-center transition-all ${
+                            currentTab === "general"
+                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          ⚙️ Umum
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "seals" }))}
+                          className={`py-1.5 rounded-lg text-center transition-all ${
+                            currentTab === "seals"
+                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          🔑 Sandi Segel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "hieroglyphs" }))}
+                          className={`py-1.5 rounded-lg text-center transition-all ${
+                            currentTab === "hieroglyphs"
+                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          📜 Hieroglyphs ({formData.evidence.length})
+                        </button>
+                      </div>
+
+                      {/* Tab 1: General Info & Release Controls */}
+                      {currentTab === "general" && (
+                        <div className="space-y-3 text-xs font-mono">
+                          {/* Title & Story */}
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Judul Chapter:</label>
+                            <input
+                              type="text"
+                              value={formData.title}
+                              onChange={(e) => handleFieldChange(ch.slug, "title", e.target.value)}
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-mono focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Judul Latin / Enigma:</label>
+                            <input
+                              type="text"
+                              value={formData.latinTitle}
+                              onChange={(e) => handleFieldChange(ch.slug, "latinTitle", e.target.value)}
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-red-400 font-mono italic focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Deskripsi Cerita Atmosfer:</label>
+                            <textarea
+                              rows={3}
+                              value={formData.description}
+                              onChange={(e) => handleFieldChange(ch.slug, "description", e.target.value)}
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-mono focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Lock / Unlock Toggle */}
+                          <div className="flex items-center justify-between bg-occult-950 p-2.5 rounded-xl border border-slate-800">
+                            <div>
+                              <span className="text-slate-200 font-bold block">Status Kunci</span>
+                              <span className="text-[9px] text-slate-500">
+                                {formData.is_locked ? "Pemain terhalang tabir" : "Dapat dimainkan"}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleFieldChange(ch.slug, "is_locked", !formData.is_locked)}
+                              className={`px-3 py-1 rounded-lg font-mono text-xs font-bold border transition-all ${
+                                formData.is_locked
+                                  ? "bg-red-900/80 text-red-200 border-red-500"
+                                  : "bg-slate-800 text-slate-400 border-slate-700"
+                              }`}
+                            >
+                              {formData.is_locked ? "🔒 TERKUNCI" : "🔓 TERBUKA"}
+                            </button>
+                          </div>
+
+                          {/* Countdown Unlock Date */}
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold flex items-center justify-between">
+                              <span>⏳ Countdown Release:</span>
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={formData.unlock_at}
+                              onChange={(e) => handleFieldChange(ch.slug, "unlock_at", e.target.value)}
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Custom Cosmic Cube Gift URL */}
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold">
+                              🎁 Custom Cosmic Cube Gift URL:
+                            </label>
+                            <input
+                              type="url"
+                              value={formData.custom_gift_url}
+                              onChange={(e) => handleFieldChange(ch.slug, "custom_gift_url", e.target.value)}
+                              placeholder="https://example.com/gift/voucher"
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Custom Promo Code */}
+                          <div className="space-y-1">
+                            <label className="block text-[10px] uppercase text-slate-400 font-bold">
+                              🏷️ Custom Promo Code:
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.custom_promo_code}
+                              onChange={(e) => handleFieldChange(ch.slug, "custom_promo_code", e.target.value)}
+                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tab 2: Custom Seals Ciphers */}
+                      {currentTab === "seals" && (
+                        <div className="space-y-3 text-xs font-mono">
+                          <p className="text-[11px] text-slate-400">
+                            Atur kata sandi dan petunjuk untuk masing-masing dari 3 Segel Gaib:
+                          </p>
+
+                          {formData.seals.map((seal, sIdx) => (
+                            <div key={seal.number || sIdx} className="p-3 rounded-2xl bg-occult-950 border border-slate-800 space-y-2">
+                              <div className="flex items-center justify-between border-b border-slate-800 pb-1 text-amber-400 font-bold">
+                                <span>SEGEL 0{seal.number}</span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="block text-[9px] uppercase text-slate-400">Nama Segel:</label>
+                                <input
+                                  type="text"
+                                  value={seal.name}
+                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "name", e.target.value)}
+                                  className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="block text-[9px] uppercase text-red-400 font-bold">Kata Sandi Jawaban (Cipher Key):</label>
+                                <input
+                                  type="text"
+                                  value={seal.cipher}
+                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "cipher", e.target.value.toUpperCase())}
+                                  placeholder="CONTOH_SANDI_123"
+                                  className="w-full bg-occult-900 border border-red-900/60 rounded-lg px-2.5 py-1 text-xs text-amber-300 font-bold font-mono uppercase"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="block text-[9px] uppercase text-slate-400">Teks Petunjuk (Hint):</label>
+                                <input
+                                  type="text"
+                                  value={seal.hint}
+                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "hint", e.target.value)}
+                                  className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-400 italic"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tab 3: Hieroglyphs Management with Image Support */}
+                      {currentTab === "hieroglyphs" && (
+                        <div className="space-y-3 text-xs font-mono">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400">Berkas Hieroglyphs & Gambar</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAddEvidence(ch.slug)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px] font-bold hover:bg-emerald-900"
+                            >
+                              ➕ Tambah Hieroglyph
+                            </button>
+                          </div>
+
+                          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                            {formData.evidence.map((ev, eIdx) => (
+                              <div key={ev.id || eIdx} className="p-3 rounded-2xl bg-occult-950 border border-slate-800 space-y-2 relative">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                                  <span className="text-[10px] text-amber-400 font-bold">Hieroglyph #{eIdx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveEvidence(ch.slug, eIdx)}
+                                    className="text-red-400 hover:text-red-300 text-[10px] underline"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] uppercase text-slate-400">Judul Arsip:</label>
+                                  <input
+                                    type="text"
+                                    value={ev.title}
+                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "title", e.target.value)}
+                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] uppercase text-purple-400 font-bold">🖼️ URL Gambar Hieroglyph (Opsional):</label>
+                                  <input
+                                    type="url"
+                                    value={ev.mediaUrl || ""}
+                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "mediaUrl", e.target.value)}
+                                    placeholder="https://.../gambar-petunjuk.jpg"
+                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-purple-300 font-mono"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] uppercase text-slate-400">Isi Naskah / Petunjuk Rahasia:</label>
+                                  <textarea
+                                    rows={3}
+                                    value={ev.content}
+                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "content", e.target.value)}
+                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 font-mono"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Card Footer Save Button */}
-                    <div className="pt-2">
+                    {/* Card Footer Save & Reset Buttons */}
+                    <div className="pt-3 border-t border-slate-800/80 flex gap-2">
                       <button
                         onClick={() => handleSaveChapter(ch.slug)}
                         disabled={loading}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-700 via-red-800 to-amber-700 text-slate-100 font-serif font-bold text-xs uppercase tracking-wider border border-amber-500/50 hover:from-amber-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center gap-2"
+                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-700 via-red-800 to-amber-700 text-slate-100 font-serif font-bold text-xs uppercase tracking-wider border border-amber-500/50 hover:from-amber-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center gap-1.5"
                       >
-                        💾 Simpan Pengaturan Bab 0{ch.id}
+                        💾 Simpan Bab 0{ch.id}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResetProgress(ch.slug)}
+                        disabled={loading}
+                        title="Reset Progres Chapter agar bisa dimainkan ulang"
+                        className="px-3 py-2.5 rounded-xl bg-red-950/80 border border-red-700 text-red-300 text-xs font-mono font-bold hover:bg-red-900 transition-colors flex items-center gap-1 shrink-0"
+                      >
+                        🔄 Reset
                       </button>
                     </div>
                   </div>
