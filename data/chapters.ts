@@ -47,7 +47,7 @@ export const CHAPTERS: Chapter[] = [
     era: "Oktober 1974 / Masa Kini",
     atmosphericDescription: "Desa nelayan mati yang diselimuti kabut asin abadi. Di bawah reruntuhan mercusuar, bisikan entitas palung samudra terdengar setiap kali air laut pasang surut.",
     relicChestName: "Cosmic Cube",
-    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar.",
     voucherPromoCode: "SEEKER-COVEN-LEVIATHAN-77",
     seals: [
       {
@@ -118,7 +118,7 @@ export const CHAPTERS: Chapter[] = [
     era: "Abad Pertengahan / Dimensi Hampa",
     atmosphericDescription: "Biara batu hitam di mana para rahib mencungkil mata mereka sendiri demi menyembah entitas kosmik tanpa rupa dari kegelapan abadi.",
     relicChestName: "Cosmic Cube",
-    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar.",
     voucherPromoCode: "SEEKER-MONASTERY-VOID-99",
     seals: [
       {
@@ -188,7 +188,7 @@ export const CHAPTERS: Chapter[] = [
     era: "November 1912 / Sisa Garis Waktu",
     atmosphericDescription: "Rumah sakit jiwa terpencil di tengah rawa gambut. Jeritan para pasien tertanam di dalam dinding batu dan rekaman silinder lilin fonograf tua.",
     relicChestName: "Cosmic Cube",
-    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar dan voucher hadiah.",
+    relicChestDescription: "Kubus kosmik beresonansi tinggi yang menyimpan rahasia entitas dimensi luar.",
     voucherPromoCode: "SEEKER-ASYLUM-RAVENSCROFT-33",
     seals: [
       {

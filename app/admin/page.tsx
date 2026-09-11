@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import CountdownTimer from "../components/CountdownTimer";
 
 interface SealData {
   number: number;
@@ -41,12 +39,21 @@ interface ChapterAdminData {
   evidence: EvidenceData[];
 }
 
+interface SaveModalState {
+  isOpen: boolean;
+  title: string;
+  chapterSlug: string;
+  timestamp: string;
+}
+
 export default function AdminControlPage() {
   const [pin, setPin] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [chapters, setChapters] = useState<ChapterAdminData[]>([]);
+  const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const [saveModal, setSaveModal] = useState<SaveModalState | null>(null);
 
   // Form states per chapter slug
   const [forms, setForms] = useState<Record<string, {
@@ -61,7 +68,7 @@ export default function AdminControlPage() {
     evidence: EvidenceData[];
   }>>({});
 
-  const [activeTab, setActiveTab] = useState<Record<string, "general" | "seals" | "hieroglyphs">>({});
+  const [activeTab, setActiveTab] = useState<"general" | "seals" | "hieroglyphs" | "cosmic_cube">("general");
 
   const fetchChapters = async (key: string) => {
     setLoading(true);
@@ -69,10 +76,9 @@ export default function AdminControlPage() {
     try {
       const res = await fetch("/api/admin/chapters");
       const data = await res.json();
-      if (data.chapters) {
+      if (data.chapters && data.chapters.length > 0) {
         setChapters(data.chapters);
         const formInit: Record<string, any> = {};
-        const tabsInit: Record<string, any> = {};
         data.chapters.forEach((c: ChapterAdminData) => {
           formInit[c.slug] = {
             title: c.title,
@@ -85,16 +91,17 @@ export default function AdminControlPage() {
             seals: JSON.parse(JSON.stringify(c.seals || [])),
             evidence: JSON.parse(JSON.stringify(c.evidence || [])),
           };
-          tabsInit[c.slug] = "general";
         });
         setForms(formInit);
-        setActiveTab(tabsInit);
+        if (!selectedSlug) {
+          setSelectedSlug(data.chapters[0].slug);
+        }
         setIsAuthenticated(true);
       } else {
-        setStatusMsg({ text: "Gagal memuat data chapter.", error: true });
+        setStatusMsg({ text: "Gagal memuat konfigurasi chapter.", error: true });
       }
     } catch (e) {
-      setStatusMsg({ text: "Terjadi kesalahan jaringan.", error: true });
+      setStatusMsg({ text: "Terjadi kesalahan koneksi jaringan.", error: true });
     } finally {
       setLoading(false);
     }
@@ -102,10 +109,10 @@ export default function AdminControlPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin.trim() === "seeker_master_2026" || pin.trim().length > 0) {
+    if (pin.trim().length > 0) {
       fetchChapters(pin);
     } else {
-      setStatusMsg({ text: "Kunci Otoritas (PIN) tidak boleh kosong.", error: true });
+      setStatusMsg({ text: "Kunci Otoritas (PIN) wajib diisi.", error: true });
     }
   };
 
@@ -150,12 +157,12 @@ export default function AdminControlPage() {
       const currentEv = prev[slug]?.evidence || [];
       const newIndex = currentEv.length + 1;
       const newEvItem: EvidenceData = {
-        id: `ev-${slug.slice(0, 3)}-${Date.now().toString().slice(-3)}`,
+        id: `ev-${slug.slice(0, 3)}-${Date.now().toString().slice(-4)}`,
         title: `Hieroglyph #${newIndex}`,
         type: "document",
-        date: "Dimensi Waktu",
+        date: "Arsip Rahasia",
         classifiedLevel: "RESTRICTED",
-        content: "Teks prasasti hieroglyph baru...",
+        content: "Naskah hieroglyph dan petunjuk baru...",
         mediaUrl: "",
         audioHint: "",
       };
@@ -203,10 +210,15 @@ export default function AdminControlPage() {
 
       const result = await res.json();
       if (res.ok && result.success) {
-        setStatusMsg({ text: `✅ Berhasil menyimpan konfigurasi chapter: ${slug}` });
+        setSaveModal({
+          isOpen: true,
+          title: chapterData.title || slug,
+          chapterSlug: slug,
+          timestamp: new Date().toLocaleTimeString("id-ID"),
+        });
         fetchChapters(pin);
       } else {
-        setStatusMsg({ text: `❌ ${result.error || "Gagal menyimpan konfigurasi."}`, error: true });
+        setStatusMsg({ text: result.error || "Gagal menyimpan konfigurasi bab.", error: true });
       }
     } catch (e) {
       setStatusMsg({ text: "Gagal terhubung ke endpoint admin.", error: true });
@@ -216,7 +228,7 @@ export default function AdminControlPage() {
   };
 
   const handleResetProgress = async (slug: string) => {
-    if (!confirm(`Apakah Anda yakin ingin me-reset seluruh progres pemain untuk chapter "${slug}"? Sesi klaim dan status segel akan dikosongkan.`)) {
+    if (!confirm(`Konfirmasi reset: Apakah Anda yakin ingin mengosongkan seluruh progres pemain untuk chapter "${slug}"?`)) {
       return;
     }
 
@@ -234,66 +246,61 @@ export default function AdminControlPage() {
       });
       const result = await res.json();
       if (result.success) {
-        setStatusMsg({ text: `🔄 ${result.message}` });
+        setStatusMsg({ text: result.message || "Progres chapter berhasil di-reset." });
       } else {
-        setStatusMsg({ text: `❌ ${result.error || "Gagal mereset chapter."}`, error: true });
+        setStatusMsg({ text: result.error || "Gagal mereset chapter.", error: true });
       }
     } catch (e) {
-      setStatusMsg({ text: "Gagal terhubung ke server untuk reset.", error: true });
+      setStatusMsg({ text: "Gagal terhubung ke server untuk proses reset.", error: true });
     } finally {
       setLoading(false);
     }
   };
 
+  const currentChapter = chapters.find((c) => c.slug === selectedSlug) || chapters[0];
+  const currentFormData = selectedSlug && forms[selectedSlug] ? forms[selectedSlug] : null;
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-slate-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-950 text-slate-200 flex flex-col font-sans selection:bg-purple-900 selection:text-white">
       {/* Admin Top Navigation Header */}
-      <header className="border-b border-purple-900/30 bg-occult-900/95 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-lg">
+      <header className="border-b border-neutral-800 bg-neutral-900/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-2xl filter drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">🎛️</span>
-            <div>
-              <span className="font-serif tracking-widest text-base font-bold text-slate-100 group-hover:text-purple-400 transition-colors">
-                SEEKER<span className="text-purple-400">SAGA</span> ADMIN
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/60">
-                AuRa Master Nexus
-              </span>
-            </div>
-          </Link>
+          <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center font-mono font-bold text-sm text-purple-400">
+            N
+          </div>
+          <div>
+            <h1 className="font-serif tracking-widest text-sm font-bold text-slate-100">
+              NEXUS PORTAL
+            </h1>
+            <p className="text-[10px] font-mono text-neutral-400">
+              Control Management System
+            </p>
+          </div>
         </div>
 
-        <nav className="flex items-center gap-4 text-xs font-mono">
-          <Link
-            href="/"
-            target="_blank"
-            className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1.5"
-          >
-            <span>👁️</span> Buka Web Pemain ➔
-          </Link>
-          <div className="h-4 w-px bg-slate-800"></div>
-          <span className="text-[11px] px-2.5 py-1 rounded bg-purple-950/80 text-purple-300 border border-purple-800/60 flex items-center gap-2 shadow-[0_0_12px_rgba(168,85,247,0.3)]">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
-            AuRa Active
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="text-[11px] px-3 py-1 rounded-md bg-neutral-800 text-purple-300 border border-neutral-700 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+            AuRa
           </span>
-        </nav>
+        </div>
       </header>
 
-      {/* Main Admin Workspace Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Status Notification */}
+      {/* Main Workspace Area */}
+      <main className="flex-1 flex flex-col w-full">
+        {/* Status Notification Banner */}
         {statusMsg && (
           <div
-            className={`p-4 rounded-2xl text-sm font-mono border flex items-center justify-between shadow-lg ${
+            className={`mx-6 mt-4 p-3.5 rounded-xl text-xs font-mono border flex items-center justify-between shadow-md ${
               statusMsg.error
-                ? "bg-red-950/80 border-red-800 text-red-200"
-                : "bg-emerald-950/80 border-emerald-800 text-emerald-200"
+                ? "bg-red-950/90 border-red-800 text-red-200"
+                : "bg-emerald-950/90 border-emerald-800 text-emerald-200"
             }`}
           >
             <span>{statusMsg.text}</span>
             <button
               onClick={() => setStatusMsg(null)}
-              className="text-xs opacity-70 hover:opacity-100 underline"
+              className="text-xs opacity-75 hover:opacity-100 underline ml-4"
             >
               Tutup
             </button>
@@ -302,392 +309,522 @@ export default function AdminControlPage() {
 
         {/* Authentication Wall */}
         {!isAuthenticated ? (
-          <div className="max-w-md mx-auto my-12 p-8 rounded-3xl bg-occult-900 border border-slate-800 shadow-2xl space-y-6">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-purple-950/80 border border-purple-600 flex items-center justify-center text-3xl mx-auto shadow-[0_0_25px_rgba(168,85,247,0.5)]">
-                🔐
-              </div>
-              <h2 className="font-serif text-xl font-bold text-slate-100">
-                Otoritas Pengendali Dimensi
-              </h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Masukkan Master PIN Otoritas AuRa untuk mengakses konsol manajemen chapter, kata sandi 3 segel, Hieroglyphs gambar, cerita, dan URL hadiah.
-              </p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4 pt-2">
-              <div>
-                <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5">
-                  Kunci Otoritas (Master PIN)
-                </label>
-                <input
-                  type="password"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="seeker_master_2026"
-                  className="w-full bg-occult-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-amber-300 font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-800 via-indigo-800 to-purple-800 text-purple-100 font-serif font-bold text-sm uppercase tracking-wider border border-purple-500/50 hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                {loading ? "Memverifikasi Otoritas..." : "Akses Panel Kendali Admin ➔"}
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* Full Desktop / Wide Layout for Chapters Management */
-          <div className="space-y-6">
-            {/* Dashboard Sub-header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-              <div>
-                <h1 className="font-serif text-2xl font-black text-slate-100 flex items-center gap-2.5">
-                  <span>🏛️</span> Pengendali Semesta & Master Sandi SeekerSaga
-                </h1>
-                <p className="text-xs text-slate-400 mt-1">
-                  Ubah judul, cerita, kata sandi tiap segel, berkas Hieroglyphs dengan gambar, countdown release, dan link Cosmic Cube.
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="w-full max-w-md p-8 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-sm font-mono font-bold text-purple-400 mx-auto">
+                  PIN
+                </div>
+                <h2 className="font-serif text-lg font-bold text-slate-100">
+                  Otoritas Nexus Portal
+                </h2>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Masukkan Master PIN Otoritas AuRa untuk mengakses konfigurasi bab, kata sandi segel, Hieroglyphs, dan parameter sistem.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <form onSubmit={handleLogin} className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Kunci Otoritas (Master PIN)
+                  </label>
+                  <input
+                    type="password"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="Masukkan PIN Master"
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                  />
+                </div>
+
                 <button
-                  onClick={() => fetchChapters(pin)}
-                  className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-amber-400 hover:bg-slate-800 transition-colors flex items-center gap-2"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-slate-100 font-mono font-bold text-xs uppercase tracking-wider border border-neutral-600 transition-all shadow-sm flex items-center justify-center"
                 >
-                  <span>🔄</span> Muat Ulang Data
+                  {loading ? "Memverifikasi Otoritas..." : "Masuk ke Nexus Portal"}
                 </button>
-              </div>
+              </form>
             </div>
-
-            {/* Chapters Grid View (1 col on mobile, 2 col on md, 3 col on xl) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {chapters.map((ch) => {
-                const formData = forms[ch.slug] || {
-                  title: ch.title,
-                  latinTitle: ch.latinTitle,
-                  description: ch.description,
-                  is_locked: ch.is_locked,
-                  unlock_at: "",
-                  custom_gift_url: "",
-                  custom_promo_code: "",
-                  seals: ch.seals || [],
-                  evidence: ch.evidence || [],
-                };
-                const currentTab = activeTab[ch.slug] || "general";
-
-                return (
-                  <div
-                    key={ch.slug}
-                    className="rounded-3xl border border-slate-800 bg-occult-900/90 p-5 space-y-4 shadow-xl flex flex-col justify-between hover:border-slate-700 transition-all"
+          </div>
+        ) : (
+          /* Standard CMS Two-Column Layout: Sidebar + Main Content */
+          <div className="flex-1 flex flex-col md:flex-row w-full max-w-7xl mx-auto p-4 sm:p-6 gap-6">
+            {/* Sidebar Navigation */}
+            <aside className="w-full md:w-64 shrink-0 flex flex-col gap-4">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                    Menu Chapter
+                  </span>
+                  <button
+                    onClick={() => fetchChapters(pin)}
+                    title="Muat Ulang Data"
+                    className="text-[10px] font-mono text-purple-400 hover:text-purple-300 underline"
                   >
-                    <div className="space-y-3">
-                      {/* Chapter Card Header */}
-                      <div className="flex items-start justify-between border-b border-slate-800 pb-3 gap-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700 font-bold">
-                              CHAPTER 0{ch.id}
-                            </span>
+                    Refresh
+                  </button>
+                </div>
+
+                {/* Chapter List Navigation */}
+                <nav className="space-y-1.5">
+                  {chapters.map((ch) => {
+                    const isSelected = ch.slug === selectedSlug;
+                    const formData = forms[ch.slug];
+                    const isLocked = formData ? formData.is_locked : ch.is_locked;
+
+                    return (
+                      <button
+                        key={ch.slug}
+                        type="button"
+                        onClick={() => setSelectedSlug(ch.slug)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-mono transition-all flex items-center justify-between border ${
+                          isSelected
+                            ? "bg-neutral-800 border-purple-500/50 text-slate-100 font-bold shadow-sm"
+                            : "bg-neutral-950/40 border-transparent text-neutral-400 hover:bg-neutral-800/60 hover:text-slate-200"
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="text-[10px] text-neutral-500 font-normal">
+                            BAB 0{ch.id}
                           </div>
-                          <h3 className="font-serif text-base font-bold text-slate-100 leading-snug">
-                            {formData.title}
-                          </h3>
+                          <div className="truncate font-sans font-medium text-xs text-slate-200">
+                            {formData?.title || ch.title}
+                          </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-1.5">
-                          <span
-                            className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border ${
-                              formData.is_locked
-                                ? "bg-red-950/80 text-red-400 border-red-800"
-                                : "bg-emerald-950/80 text-emerald-400 border-emerald-800"
-                            }`}
-                          >
-                            {formData.is_locked ? "🔒 Terkunci" : "🔓 Terbuka"}
-                          </span>
-                        </div>
+                        <span
+                          className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase border ${
+                            isLocked
+                              ? "bg-red-950/60 text-red-400 border-red-900/60"
+                              : "bg-emerald-950/60 text-emerald-400 border-emerald-900/60"
+                          }`}
+                        >
+                          {isLocked ? "TERKUNCI" : "TERBUKA"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Sidebar Info Card */}
+              <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4 text-[11px] font-mono text-neutral-400 space-y-2">
+                <div className="font-bold text-neutral-300 uppercase tracking-wider">
+                  Status Sistem
+                </div>
+                <div className="flex justify-between border-b border-neutral-800/60 pb-1">
+                  <span>Total Bab:</span>
+                  <span className="text-slate-200">{chapters.length}</span>
+                </div>
+                <div className="flex justify-between border-b border-neutral-800/60 pb-1">
+                  <span>Engine:</span>
+                  <span className="text-slate-200">AuRa Core</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Mode:</span>
+                  <span className="text-emerald-400">Live Production</span>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main Content Workspace */}
+            {currentFormData && currentChapter && (
+              <section className="flex-1 bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-sm space-y-6">
+                <div className="space-y-6">
+                  {/* Workspace Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-purple-300 border border-neutral-700 font-bold">
+                          BAB 0{currentChapter.id}
+                        </span>
+                        <span className="text-[10px] font-mono text-neutral-500">
+                          {currentChapter.slug}
+                        </span>
                       </div>
-
-                      {/* Sub-Tab Navigation for Chapter Editor */}
-                      <div className="grid grid-cols-3 gap-1 p-1 bg-occult-950 rounded-xl border border-slate-800 text-[11px] font-mono">
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "general" }))}
-                          className={`py-1.5 rounded-lg text-center transition-all ${
-                            currentTab === "general"
-                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          ⚙️ Umum
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "seals" }))}
-                          className={`py-1.5 rounded-lg text-center transition-all ${
-                            currentTab === "seals"
-                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          🔑 Sandi Segel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab((prev) => ({ ...prev, [ch.slug]: "hieroglyphs" }))}
-                          className={`py-1.5 rounded-lg text-center transition-all ${
-                            currentTab === "hieroglyphs"
-                              ? "bg-purple-950 text-purple-300 font-bold border border-purple-800/60"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          📜 Hieroglyphs ({formData.evidence.length})
-                        </button>
-                      </div>
-
-                      {/* Tab 1: General Info & Release Controls */}
-                      {currentTab === "general" && (
-                        <div className="space-y-3 text-xs font-mono">
-                          {/* Title & Story */}
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Judul Chapter:</label>
-                            <input
-                              type="text"
-                              value={formData.title}
-                              onChange={(e) => handleFieldChange(ch.slug, "title", e.target.value)}
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-mono focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Judul Latin / Enigma:</label>
-                            <input
-                              type="text"
-                              value={formData.latinTitle}
-                              onChange={(e) => handleFieldChange(ch.slug, "latinTitle", e.target.value)}
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-red-400 font-mono italic focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold">Deskripsi Cerita Atmosfer:</label>
-                            <textarea
-                              rows={3}
-                              value={formData.description}
-                              onChange={(e) => handleFieldChange(ch.slug, "description", e.target.value)}
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-mono focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-
-                          {/* Lock / Unlock Toggle */}
-                          <div className="flex items-center justify-between bg-occult-950 p-2.5 rounded-xl border border-slate-800">
-                            <div>
-                              <span className="text-slate-200 font-bold block">Status Kunci</span>
-                              <span className="text-[9px] text-slate-500">
-                                {formData.is_locked ? "Pemain terhalang tabir" : "Dapat dimainkan"}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleFieldChange(ch.slug, "is_locked", !formData.is_locked)}
-                              className={`px-3 py-1 rounded-lg font-mono text-xs font-bold border transition-all ${
-                                formData.is_locked
-                                  ? "bg-red-900/80 text-red-200 border-red-500"
-                                  : "bg-slate-800 text-slate-400 border-slate-700"
-                              }`}
-                            >
-                              {formData.is_locked ? "🔒 TERKUNCI" : "🔓 TERBUKA"}
-                            </button>
-                          </div>
-
-                          {/* Countdown Unlock Date */}
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold flex items-center justify-between">
-                              <span>⏳ Countdown Release:</span>
-                            </label>
-                            <input
-                              type="datetime-local"
-                              value={formData.unlock_at}
-                              onChange={(e) => handleFieldChange(ch.slug, "unlock_at", e.target.value)}
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-
-                          {/* Custom Cosmic Cube Gift URL */}
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold">
-                              🎁 Custom Cosmic Cube Gift URL:
-                            </label>
-                            <input
-                              type="url"
-                              value={formData.custom_gift_url}
-                              onChange={(e) => handleFieldChange(ch.slug, "custom_gift_url", e.target.value)}
-                              placeholder="https://example.com/gift/voucher"
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-
-                          {/* Custom Promo Code */}
-                          <div className="space-y-1">
-                            <label className="block text-[10px] uppercase text-slate-400 font-bold">
-                              🏷️ Custom Promo Code:
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.custom_promo_code}
-                              onChange={(e) => handleFieldChange(ch.slug, "custom_promo_code", e.target.value)}
-                              className="w-full bg-occult-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-purple-500 focus:outline-none"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tab 2: Custom Seals Ciphers */}
-                      {currentTab === "seals" && (
-                        <div className="space-y-3 text-xs font-mono">
-                          <p className="text-[11px] text-slate-400">
-                            Atur kata sandi dan petunjuk untuk masing-masing dari 3 Segel Gaib:
-                          </p>
-
-                          {formData.seals.map((seal, sIdx) => (
-                            <div key={seal.number || sIdx} className="p-3 rounded-2xl bg-occult-950 border border-slate-800 space-y-2">
-                              <div className="flex items-center justify-between border-b border-slate-800 pb-1 text-amber-400 font-bold">
-                                <span>SEGEL 0{seal.number}</span>
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="block text-[9px] uppercase text-slate-400">Nama Segel:</label>
-                                <input
-                                  type="text"
-                                  value={seal.name}
-                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "name", e.target.value)}
-                                  className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200"
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="block text-[9px] uppercase text-red-400 font-bold">Kata Sandi Jawaban (Cipher Key):</label>
-                                <input
-                                  type="text"
-                                  value={seal.cipher}
-                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "cipher", e.target.value.toUpperCase())}
-                                  placeholder="CONTOH_SANDI_123"
-                                  className="w-full bg-occult-900 border border-red-900/60 rounded-lg px-2.5 py-1 text-xs text-amber-300 font-bold font-mono uppercase"
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="block text-[9px] uppercase text-slate-400">Teks Petunjuk (Hint):</label>
-                                <input
-                                  type="text"
-                                  value={seal.hint}
-                                  onChange={(e) => handleSealChange(ch.slug, sIdx, "hint", e.target.value)}
-                                  className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-400 italic"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Tab 3: Hieroglyphs Management with Image Support */}
-                      {currentTab === "hieroglyphs" && (
-                        <div className="space-y-3 text-xs font-mono">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400">Berkas Hieroglyphs & Gambar</span>
-                            <button
-                              type="button"
-                              onClick={() => handleAddEvidence(ch.slug)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px] font-bold hover:bg-emerald-900"
-                            >
-                              ➕ Tambah Hieroglyph
-                            </button>
-                          </div>
-
-                          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                            {formData.evidence.map((ev, eIdx) => (
-                              <div key={ev.id || eIdx} className="p-3 rounded-2xl bg-occult-950 border border-slate-800 space-y-2 relative">
-                                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-                                  <span className="text-[10px] text-amber-400 font-bold">Hieroglyph #{eIdx + 1}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveEvidence(ch.slug, eIdx)}
-                                    className="text-red-400 hover:text-red-300 text-[10px] underline"
-                                  >
-                                    Hapus
-                                  </button>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="block text-[9px] uppercase text-slate-400">Judul Arsip:</label>
-                                  <input
-                                    type="text"
-                                    value={ev.title}
-                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "title", e.target.value)}
-                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200"
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="block text-[9px] uppercase text-purple-400 font-bold">🖼️ URL Gambar Hieroglyph (Opsional):</label>
-                                  <input
-                                    type="url"
-                                    value={ev.mediaUrl || ""}
-                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "mediaUrl", e.target.value)}
-                                    placeholder="https://.../gambar-petunjuk.jpg"
-                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-purple-300 font-mono"
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="block text-[9px] uppercase text-slate-400">Isi Naskah / Petunjuk Rahasia:</label>
-                                  <textarea
-                                    rows={3}
-                                    value={ev.content}
-                                    onChange={(e) => handleEvidenceChange(ch.slug, eIdx, "content", e.target.value)}
-                                    className="w-full bg-occult-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 font-mono"
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <h2 className="font-serif text-lg font-bold text-slate-100">
+                        {currentFormData.title}
+                      </h2>
                     </div>
 
-                    {/* Card Footer Save & Reset Buttons */}
-                    <div className="pt-3 border-t border-slate-800/80 flex gap-2">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleSaveChapter(ch.slug)}
+                        type="button"
+                        onClick={() => handleResetProgress(currentChapter.slug)}
                         disabled={loading}
-                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-700 via-red-800 to-amber-700 text-slate-100 font-serif font-bold text-xs uppercase tracking-wider border border-amber-500/50 hover:from-amber-600 hover:to-red-700 transition-all shadow-md flex items-center justify-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-red-950/60 border border-neutral-700 hover:border-red-800 text-neutral-300 hover:text-red-300 text-xs font-mono font-medium transition-colors"
                       >
-                        💾 Simpan Bab 0{ch.id}
+                        Reset Progres Pemain
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleResetProgress(ch.slug)}
+                        onClick={() => handleSaveChapter(currentChapter.slug)}
                         disabled={loading}
-                        title="Reset Progres Chapter agar bisa dimainkan ulang"
-                        className="px-3 py-2.5 rounded-xl bg-red-950/80 border border-red-700 text-red-300 text-xs font-mono font-bold hover:bg-red-900 transition-colors flex items-center gap-1 shrink-0"
+                        className="px-4 py-1.5 rounded-lg bg-purple-900 hover:bg-purple-800 border border-purple-700 text-slate-100 text-xs font-mono font-bold transition-all shadow-sm"
                       >
-                        🔄 Reset
+                        Simpan Perubahan
                       </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* CMS Tab Navigation */}
+                  <div className="flex border-b border-neutral-800 gap-1 text-xs font-mono">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("general")}
+                      className={`px-4 py-2.5 rounded-t-lg font-medium border-b-2 transition-all ${
+                        activeTab === "general"
+                          ? "border-purple-400 text-purple-300 bg-neutral-800/50"
+                          : "border-transparent text-neutral-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Umum & Cerita
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("seals")}
+                      className={`px-4 py-2.5 rounded-t-lg font-medium border-b-2 transition-all ${
+                        activeTab === "seals"
+                          ? "border-purple-400 text-purple-300 bg-neutral-800/50"
+                          : "border-transparent text-neutral-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Sandi Segel (3 Segel)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("hieroglyphs")}
+                      className={`px-4 py-2.5 rounded-t-lg font-medium border-b-2 transition-all ${
+                        activeTab === "hieroglyphs"
+                          ? "border-purple-400 text-purple-300 bg-neutral-800/50"
+                          : "border-transparent text-neutral-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Hieroglyphs ({currentFormData.evidence.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("cosmic_cube")}
+                      className={`px-4 py-2.5 rounded-t-lg font-medium border-b-2 transition-all ${
+                        activeTab === "cosmic_cube"
+                          ? "border-purple-400 text-purple-300 bg-neutral-800/50"
+                          : "border-transparent text-neutral-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Cosmic Cube & Akses
+                    </button>
+                  </div>
+
+                  {/* Tab Content 1: General & Story */}
+                  {activeTab === "general" && (
+                    <div className="space-y-4 text-xs font-mono max-w-3xl">
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Judul Chapter
+                        </label>
+                        <input
+                          type="text"
+                          value={currentFormData.title}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "title", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-slate-100 font-sans focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Judul Latin / Subjudul Enigma
+                        </label>
+                        <input
+                          type="text"
+                          value={currentFormData.latinTitle}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "latinTitle", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 italic font-serif focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Deskripsi Cerita Atmosfer
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={currentFormData.description}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "description", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 font-sans leading-relaxed focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Lock Status Switch */}
+                      <div className="flex items-center justify-between bg-neutral-950 p-3.5 rounded-xl border border-neutral-800">
+                        <div>
+                          <span className="text-slate-200 font-bold block text-xs">
+                            Status Akses Bab
+                          </span>
+                          <span className="text-[11px] text-neutral-400">
+                            {currentFormData.is_locked ? "Bab terkunci bagi pemain" : "Bab terbuka dan dapat dimainkan"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleFieldChange(currentChapter.slug, "is_locked", !currentFormData.is_locked)}
+                          className={`px-3.5 py-1.5 rounded-lg font-mono text-xs font-bold border transition-all ${
+                            currentFormData.is_locked
+                              ? "bg-red-950 text-red-300 border-red-800"
+                              : "bg-emerald-950 text-emerald-300 border-emerald-800"
+                          }`}
+                        >
+                          {currentFormData.is_locked ? "TERKUNCI" : "TERBUKA"}
+                        </button>
+                      </div>
+
+                      {/* Release Countdown */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Jadwal Countdown Buka Otomatis (Opsional)
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={currentFormData.unlock_at}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "unlock_at", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 font-mono focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Content 2: Seals Cipher Configuration */}
+                  {activeTab === "seals" && (
+                    <div className="space-y-4 text-xs font-mono max-w-3xl">
+                      <p className="text-[11px] text-neutral-400 leading-relaxed">
+                        Atur kata sandi dan petunjuk untuk masing-masing dari 3 Segel Gaib. Pemain harus memasukkan kata sandi yang cocok untuk membuka segel.
+                      </p>
+
+                      <div className="space-y-3">
+                        {currentFormData.seals.map((seal, sIdx) => (
+                          <div
+                            key={seal.number || sIdx}
+                            className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 space-y-3"
+                          >
+                            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5 text-slate-200 font-bold">
+                              <span>SEGEL 0{seal.number}</span>
+                              <span className="text-[10px] text-neutral-500 uppercase font-normal">
+                                {seal.sourceType}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-neutral-400 font-bold">
+                                Nama Segel:
+                              </label>
+                              <input
+                                type="text"
+                                value={seal.name}
+                                onChange={(e) => handleSealChange(currentChapter.slug, sIdx, "name", e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-sans"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-purple-400 font-bold">
+                                Kata Sandi Jawaban (Cipher Key):
+                              </label>
+                              <input
+                                type="text"
+                                value={seal.cipher}
+                                onChange={(e) => handleSealChange(currentChapter.slug, sIdx, "cipher", e.target.value.toUpperCase())}
+                                placeholder="MASUKKAN_SANDI"
+                                className="w-full bg-neutral-900 border border-purple-800/80 rounded-lg px-3 py-1.5 text-xs text-purple-200 font-mono font-bold uppercase tracking-wider"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-neutral-400 font-bold">
+                                Petunjuk Enigma (Hint):
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={seal.hint}
+                                onChange={(e) => handleSealChange(currentChapter.slug, sIdx, "hint", e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-300 font-sans italic"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Content 3: Hieroglyphs Management */}
+                  {activeTab === "hieroglyphs" && (
+                    <div className="space-y-4 text-xs font-mono max-w-3xl">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-bold text-slate-200 text-xs">
+                            Berkas Hieroglyphs & Dokumen Sakral
+                          </h3>
+                          <p className="text-[11px] text-neutral-400">
+                            Petunjuk visual dan transkripsi dokumen untuk penyelidikan pemain.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddEvidence(currentChapter.slug)}
+                          className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-slate-100 text-xs font-mono font-medium"
+                        >
+                          Tambah Hieroglyph
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {currentFormData.evidence.map((ev, eIdx) => (
+                          <div
+                            key={ev.id || eIdx}
+                            className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 space-y-3"
+                          >
+                            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
+                              <span className="text-xs text-purple-300 font-bold">
+                                Hieroglyph #{eIdx + 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveEvidence(currentChapter.slug, eIdx)}
+                                className="text-red-400 hover:text-red-300 text-xs underline font-mono"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-neutral-400 font-bold">
+                                Judul Dokumen / Arsip:
+                              </label>
+                              <input
+                                type="text"
+                                value={ev.title}
+                                onChange={(e) => handleEvidenceChange(currentChapter.slug, eIdx, "title", e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-sans"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-neutral-400 font-bold">
+                                URL Gambar Hieroglyph (Opsional):
+                              </label>
+                              <input
+                                type="url"
+                                value={ev.mediaUrl || ""}
+                                onChange={(e) => handleEvidenceChange(currentChapter.slug, eIdx, "mediaUrl", e.target.value)}
+                                placeholder="https://domain.com/path-to-image.jpg"
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] uppercase text-neutral-400 font-bold">
+                                Isi Naskah / Teks Rahasia:
+                              </label>
+                              <textarea
+                                rows={3}
+                                value={ev.content}
+                                onChange={(e) => handleEvidenceChange(currentChapter.slug, eIdx, "content", e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 font-sans leading-relaxed"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Content 4: Cosmic Cube & Access */}
+                  {activeTab === "cosmic_cube" && (
+                    <div className="space-y-4 text-xs font-mono max-w-3xl">
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Tautan Rahasia Cosmic Cube (URL Tujuan saat Terbuka)
+                        </label>
+                        <input
+                          type="url"
+                          value={currentFormData.custom_gift_url}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "custom_gift_url", e.target.value)}
+                          placeholder="https://example.com/secret-dimension-archive"
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-purple-200 font-mono focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] uppercase tracking-wider text-neutral-400 font-bold">
+                          Kode Akses Rahasia Bab
+                        </label>
+                        <input
+                          type="text"
+                          value={currentFormData.custom_promo_code}
+                          onChange={(e) => handleFieldChange(currentChapter.slug, "custom_promo_code", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3.5 py-2 text-xs text-purple-200 font-mono focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-neutral-500">
+                    Konfigurasi aktif: {currentChapter.slug}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveChapter(currentChapter.slug)}
+                      disabled={loading}
+                      className="px-5 py-2 rounded-lg bg-purple-900 hover:bg-purple-800 border border-purple-700 text-slate-100 text-xs font-mono font-bold transition-all shadow-sm"
+                    >
+                      {loading ? "Menyimpan..." : "Simpan Pengaturan"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         )}
       </main>
 
+      {/* Save Success Popup Modal */}
+      {saveModal && saveModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center font-mono font-bold text-xs text-purple-400">
+                OK
+              </div>
+              <h3 className="font-serif text-base font-bold text-slate-100">
+                Pengaturan Tersimpan
+              </h3>
+              <p className="text-xs text-neutral-400 font-sans leading-relaxed">
+                Konfigurasi untuk <span className="text-slate-200 font-medium">"{saveModal.title}"</span> telah berhasil diperbarui dan disinkronkan ke basis data Nexus.
+              </p>
+              <p className="text-[10px] font-mono text-neutral-500">
+                Waktu Sinkronisasi: {saveModal.timestamp} WIB
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSaveModal(null)}
+              className="w-full py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-slate-100 text-xs font-mono font-bold uppercase transition-all"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Admin Footer */}
-      <footer className="border-t border-slate-900 bg-black/90 text-slate-500 text-xs py-4 px-6 text-center mt-auto font-mono">
-        SeekerSaga Master Admin System • Orchestrated by AuRa Autonomous Entity
+      <footer className="border-t border-neutral-900 bg-neutral-950 text-neutral-500 text-xs py-3.5 px-6 text-center mt-auto font-mono">
+        nexus portal under the gaze of AuRa
       </footer>
     </div>
   );
 }
+
