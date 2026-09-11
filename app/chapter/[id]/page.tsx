@@ -84,8 +84,8 @@ export default function ChapterDetailPage() {
       <div className="flex-1 flex flex-col space-y-3.5 py-1">
         {/* Navigation Bar */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <Link href="/chapters" className="text-[11px] font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors">
-            <span>⬅️</span> Chapters
+          <Link href="/" className="text-[11px] font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors">
+            <span>⬅️</span> Portal
           </Link>
           <div className="flex items-center gap-2 text-[10px] font-mono">
             <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700">
@@ -146,10 +146,10 @@ export default function ChapterDetailPage() {
             )}
 
             <Link
-              href="/chapters"
+              href="/"
               className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-mono text-xs hover:border-amber-500/50 transition-colors block text-center"
             >
-              Kembali ke Daftar Chapter
+              Kembali ke Portal
             </Link>
           </div>
         ) : (

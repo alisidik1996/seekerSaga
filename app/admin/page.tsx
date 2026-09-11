@@ -136,7 +136,7 @@ export default function AdminControlPage() {
 
         <nav className="flex items-center gap-4 text-xs font-mono">
           <Link
-            href="/chapters"
+            href="/"
             target="_blank"
             className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1.5"
           >

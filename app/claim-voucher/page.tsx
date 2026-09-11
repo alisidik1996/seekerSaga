@@ -83,8 +83,8 @@ function ClaimVoucherContent() {
               Voucher atas nama <strong className="text-emerald-400">{name}</strong> telah terdaftar. Detail dikirim ke <strong className="text-emerald-400">{email}</strong>.
             </p>
             <div className="pt-2">
-              <Link href="/chapters" className="inline-block px-3.5 py-1.5 rounded-lg bg-emerald-900 text-emerald-200 border border-emerald-600 font-bold hover:bg-emerald-800 transition-colors text-[11px]">
-                Pilih Chapter Berikutnya ➔
+              <Link href="/" className="inline-block px-3.5 py-1.5 rounded-lg bg-emerald-900 text-emerald-200 border border-emerald-600 font-bold hover:bg-emerald-800 transition-colors text-[11px]">
+                Kembali ke Portal ➔
               </Link>
             </div>
           </div>
