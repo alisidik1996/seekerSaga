@@ -33,135 +33,118 @@ export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
   };
 
   return (
-    <div className="bg-occult-800/90 border border-slate-800 rounded-2xl p-6 flex flex-col h-full shadow-2xl">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+    <div className="bg-occult-800/90 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col shadow-xl w-full">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3.5">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-red-400">Meja Forensik & Arsip</span>
-          <h2 className="font-serif text-xl font-bold text-slate-100 flex items-center gap-2">
-            <span>📂</span> Berkas Bukti Penyelidikan
+          <span className="text-[10px] font-mono uppercase tracking-widest text-red-400">Meja Forensik</span>
+          <h2 className="font-serif text-base font-bold text-slate-100 flex items-center gap-1.5">
+            <span>📂</span> Berkas Bukti
           </h2>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono">
+        <div className="flex items-center gap-1 text-[11px] font-mono">
           <button
             onClick={() => setActiveTab("dossier")}
-            className={`px-3 py-1.5 rounded-lg border transition-colors ${
+            className={`px-2.5 py-1 rounded-lg border transition-colors ${
               activeTab === "dossier"
-                ? "bg-amber-950/50 border-amber-500/60 text-amber-300"
-                : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-amber-950/50 border-amber-500/60 text-amber-300 font-bold"
+                : "bg-slate-900 border-slate-800 text-slate-400"
             }`}
           >
-            Arsip Dokumen
+            Arsip
           </button>
           <button
             onClick={() => setActiveTab("cipher_tools")}
-            className={`px-3 py-1.5 rounded-lg border transition-colors ${
+            className={`px-2.5 py-1 rounded-lg border transition-colors ${
               activeTab === "cipher_tools"
-                ? "bg-amber-950/50 border-amber-500/60 text-amber-300"
-                : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-amber-950/50 border-amber-500/60 text-amber-300 font-bold"
+                : "bg-slate-900 border-slate-800 text-slate-400"
             }`}
           >
-            Alat Kriptografi
+            Sandi
           </button>
         </div>
       </div>
 
       {activeTab === "dossier" ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-          <div className="space-y-2.5">
-            {evidenceList.map((ev) => (
+        <div className="flex flex-col space-y-3">
+          {/* Horizontal / Compact selector for evidence */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {evidenceList.map((ev, idx) => (
               <button
                 key={ev.id}
                 onClick={() => setActiveEvidenceId(ev.id)}
-                className={`w-full text-left p-3.5 rounded-xl border transition-all ${
+                className={`px-2.5 py-1.5 rounded-lg border text-left text-xs font-mono shrink-0 transition-all ${
                   activeEvidenceId === ev.id
-                    ? "bg-occult-700/80 border-amber-500/60 text-slate-100 shadow-md"
-                    : "bg-occult-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                    ? "bg-amber-950/70 border-amber-500 text-amber-200 font-bold"
+                    : "bg-occult-900/80 border-slate-800 text-slate-400"
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                  <span>{ev.date}</span>
-                  <span className="text-red-400 font-bold">{ev.classifiedLevel}</span>
-                </div>
-                <div className="text-xs font-serif font-bold truncate text-slate-200">
-                  {ev.title}
-                </div>
-                <div className="text-[11px] text-slate-500 font-mono mt-1 capitalize">
-                  Tipe: {ev.type}
-                </div>
+                Bukti #{idx + 1}
               </button>
             ))}
           </div>
 
-          <div className="md:col-span-2 bg-occult-900 rounded-xl p-6 border border-slate-800/80 flex flex-col justify-between dossier-bg">
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[10px] border border-red-800/40 font-bold">
-                    {activeEvidence.classifiedLevel}
-                  </span>
-                  <span className="text-xs font-mono text-slate-400">{activeEvidence.date}</span>
-                </div>
-                <span className="text-xs font-mono text-slate-500">ID: {activeEvidence.id}</span>
-              </div>
-
-              <h3 className="font-serif text-lg font-bold text-amber-300 mb-4">
-                {activeEvidence.title}
-              </h3>
-
-              <div className="text-sm leading-relaxed text-slate-300 bg-occult-800/80 p-4 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono text-xs">
-                {activeEvidence.content}
-              </div>
-
-              {activeEvidence.audioHint && (
-                <div className="mt-4 p-3 rounded-lg bg-red-950/30 border border-red-800/40 text-xs font-mono text-red-300 flex items-center gap-2">
-                  <span>📻</span>
-                  <span><strong>Spektrogram Analisis:</strong> {activeEvidence.audioHint}</span>
-                </div>
-              )}
+          {/* Dossier Viewer */}
+          <div className="bg-occult-900 rounded-xl p-3.5 border border-slate-800/80 dossier-bg space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-400 font-mono text-[9px] border border-red-800/40 font-bold">
+                {activeEvidence.classifiedLevel}
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">{activeEvidence.date}</span>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-              <span>Arsip Penyelidikan Resmi</span>
-              <span>SeekerSaga Intelligence Bureau</span>
+            <h3 className="font-serif text-sm font-bold text-amber-300">
+              {activeEvidence.title}
+            </h3>
+
+            <div className="text-[11px] leading-relaxed text-slate-300 bg-occult-800/80 p-3 rounded-lg border border-slate-800 whitespace-pre-wrap font-mono break-words">
+              {activeEvidence.content}
             </div>
+
+            {activeEvidence.audioHint && (
+              <div className="p-2.5 rounded-lg bg-red-950/30 border border-red-800/40 text-[10px] font-mono text-red-300 flex items-start gap-1.5 break-words">
+                <span className="shrink-0">📻</span>
+                <span><strong>Spektrogram:</strong> {activeEvidence.audioHint}</span>
+              </div>
+            )}
           </div>
         </div>
       ) : (
-        <div className="bg-occult-900 rounded-xl p-6 border border-slate-800/80 space-y-6 flex-1">
+        <div className="bg-occult-900 rounded-xl p-3.5 border border-slate-800/80 space-y-3">
           <div>
-            <h3 className="font-serif text-base font-bold text-amber-400 mb-2 flex items-center gap-2">
+            <h3 className="font-serif text-xs font-bold text-amber-400 mb-1 flex items-center gap-1.5">
               <span>🔐</span> Sandi Caesar / Rotasi Aksara
             </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Gunakan perkakas ini untuk memecahkan kode teks terenkripsi yang ditemukan di dalam dokumen.
+            <p className="text-[10px] text-slate-400 mb-2">
+              Pecahkan teks terenkripsi dengan rotasi geser alfabet.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Teks Input / Sandi:</label>
+                <label className="block text-[10px] font-mono text-slate-400 mb-0.5">Teks Masukan:</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={toolText}
                   onChange={(e) => setToolText(e.target.value)}
-                  placeholder="Ketik atau tempel teks sandi di sini..."
-                  className="w-full p-3 rounded-lg bg-occult-800 border border-slate-700 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-500"
+                  placeholder="Tempel teks sandi..."
+                  className="w-full p-2 rounded-lg bg-occult-800 border border-slate-700 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-mono text-slate-400">Hasil Dekripsi:</label>
-                  <span className="text-xs font-mono text-amber-400">Shift: {caesarShift}</span>
+                <div className="flex items-center justify-between mb-0.5 text-[10px] font-mono text-slate-400">
+                  <span>Hasil Dekripsi:</span>
+                  <span className="text-amber-400 font-bold">Shift: {caesarShift}</span>
                 </div>
-                <div className="p-3 rounded-lg bg-occult-800 border border-slate-700 text-xs font-mono text-emerald-400 min-h-[76px] whitespace-pre-wrap">
-                  {toolText ? applyCaesar(toolText, caesarShift) : "(Hasil dekripsi akan muncul di sini...)"}
+                <div className="p-2.5 rounded-lg bg-occult-800 border border-slate-700 text-xs font-mono text-emerald-400 min-h-[50px] whitespace-pre-wrap break-words">
+                  {toolText ? applyCaesar(toolText, caesarShift) : "(Hasil dekripsi...)"}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-slate-400">Rotasi Geser (Shift):</span>
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-[10px] font-mono text-slate-400 shrink-0">Shift:</span>
               <input
                 type="range"
                 min="-25"
@@ -172,7 +155,7 @@ export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
               />
               <button
                 onClick={() => setCaesarShift(0)}
-                className="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700"
+                className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700"
               >
                 Reset
               </button>

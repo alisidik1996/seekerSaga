@@ -51,25 +51,25 @@ export default function RelicChest({
 
   return (
     <div
-      className={`rounded-2xl p-6 border transition-all duration-500 shadow-2xl relative overflow-hidden ${
+      className={`rounded-2xl p-4 border transition-all duration-500 shadow-xl relative overflow-hidden w-full ${
         isUnlocked
-          ? "bg-gradient-to-b from-amber-950/60 to-occult-900 border-amber-500 shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+          ? "bg-gradient-to-b from-amber-950/60 to-occult-900 border-amber-500 shadow-[0_0_20px_rgba(212,175,55,0.3)]"
           : "bg-occult-800/60 border-slate-800 opacity-80"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-        <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-amber-400">
-            {isUnlocked ? "✨ SEGEL TELAH TERBUKA PENUH" : "🔒 TERKUNCI OLEH 3 SEGEL"}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5">
+        <div className="min-w-0 pr-2">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 block">
+            {isUnlocked ? "✨ SEGEL TERBUKA PENUH" : "🔒 TERKUNCI 3 SEGEL"}
           </span>
-          <h2 className="font-serif text-xl font-bold text-slate-100 flex items-center gap-2">
+          <h2 className="font-serif text-base font-bold text-slate-100 flex items-center gap-1.5 truncate">
             <span>📦</span> {chestName}
           </h2>
         </div>
-        <span className="text-2xl animate-bounce">{isUnlocked ? "🔓" : "🔐"}</span>
+        <span className="text-xl shrink-0">{isUnlocked ? "🔓" : "🔐"}</span>
       </div>
 
-      <p className="text-xs text-slate-400 leading-relaxed mb-6 font-serif">
+      <p className="text-xs text-slate-400 leading-relaxed mb-4 font-serif break-words">
         {chestDescription}
       </p>
 
@@ -79,22 +79,22 @@ export default function RelicChest({
             <button
               onClick={handleClaim}
               disabled={loading}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 text-slate-900 font-serif font-black text-sm tracking-widest uppercase border border-amber-300 shadow-[0_0_25px_rgba(212,175,55,0.8)] hover:scale-[1.02] transition-all flex items-center justify-center gap-2 animate-pulse"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 text-slate-900 font-serif font-black text-xs tracking-wider uppercase border border-amber-300 shadow-lg hover:scale-[1.01] transition-all flex items-center justify-center gap-1.5"
             >
-              <span>🎁</span> {loading ? "Membuka Kunci Peti..." : "BUKA PETI & KLAIM URL VOUCHER"}
+              <span>🎁</span> {loading ? "Membuka Kunci..." : "KLAIM URL VOUCHER"}
             </button>
           ) : (
-            <div className="p-5 rounded-xl bg-occult-900 border border-amber-500 space-y-3">
+            <div className="p-3.5 rounded-xl bg-occult-900 border border-amber-500 space-y-2.5">
               <div className="flex items-center justify-between text-xs font-mono text-amber-400 font-bold">
                 <span>🎉 HADIAH TERUNGKAP!</span>
-                <span className="text-slate-400">Kode: {promoCode}</span>
+                <span className="text-slate-400 text-[10px]">Kode: {promoCode}</span>
               </div>
 
-              <p className="text-xs text-slate-300">
-                Selamat The Seeker! Tautan resmi klaim voucher Anda telah digenerate:
+              <p className="text-[11px] text-slate-300">
+                Tautan resmi klaim voucher Anda telah aktif:
               </p>
 
-              <div className="p-3 rounded-lg bg-occult-800 border border-slate-700 font-mono text-xs text-amber-300 break-all select-all">
+              <div className="p-2.5 rounded-lg bg-occult-800 border border-slate-700 font-mono text-[11px] text-amber-300 break-all select-all">
                 {claimUrl}
               </div>
 
@@ -103,13 +103,13 @@ export default function RelicChest({
                   onClick={copyToClipboard}
                   className="flex-1 py-2 rounded-lg bg-amber-950 border border-amber-600 text-amber-300 font-mono text-xs font-bold hover:bg-amber-900 transition-colors"
                 >
-                  {copied ? "✅ Tautan Disalin!" : "📋 Salin Tautan Voucher"}
+                  {copied ? "✅ Disalin!" : "📋 Salin URL"}
                 </button>
                 <a
                   href={claimUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-lg bg-red-950 border border-red-700 text-red-300 font-mono text-xs font-bold hover:bg-red-900 transition-colors flex items-center gap-1"
+                  className="px-3.5 py-2 rounded-lg bg-red-950 border border-red-700 text-red-300 font-mono text-xs font-bold hover:bg-red-900 transition-colors flex items-center gap-1 shrink-0"
                 >
                   Buka ➔
                 </a>
@@ -118,8 +118,8 @@ export default function RelicChest({
           )}
         </div>
       ) : (
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-500 text-xs font-mono text-center flex items-center justify-center gap-2">
-          <span>⚠️</span> Buka seluruh 3 segel gaib di atas untuk melepaskan kunci peti relikui ini.
+        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-500 text-[11px] font-mono text-center flex items-center justify-center gap-1.5">
+          <span>⚠️</span> Buka seluruh 3 segel di atas untuk membuka peti ini.
         </div>
       )}
     </div>
