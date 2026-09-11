@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       success: true,
       url: claimUrl,
       promoCode: resolvedPromoCode,
-      message: "URL Voucher berhasil dibuat secara resmi.",
+      message: "Tautan rahasia Cosmic Cube berhasil dibuka secara resmi.",
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

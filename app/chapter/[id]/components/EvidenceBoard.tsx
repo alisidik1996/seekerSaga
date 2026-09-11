@@ -9,6 +9,13 @@ interface EvidenceBoardProps {
 
 export default function EvidenceBoard({ evidenceList }: EvidenceBoardProps) {
   const [activeEvidenceId, setActiveEvidenceId] = useState<string>(evidenceList[0]?.id || "");
+
+  React.useEffect(() => {
+    if (evidenceList.length > 0 && !evidenceList.some((e) => e.id === activeEvidenceId)) {
+      setActiveEvidenceId(evidenceList[0].id);
+    }
+  }, [evidenceList, activeEvidenceId]);
+
   const activeEvidence = evidenceList.find((e) => e.id === activeEvidenceId) || evidenceList[0];
 
   return (
