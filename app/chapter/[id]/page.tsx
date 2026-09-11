@@ -16,6 +16,7 @@ export default function ChapterDetailPage() {
   const chapter = CHAPTERS.find((c) => c.slug === slug || c.id === slug) || CHAPTERS[0];
 
   const [unlockedSeals, setUnlockedSeals] = useState<number[]>([]);
+  const [activeScreenTab, setActiveScreenTab] = useState<"seals" | "evidence" | "oracle">("seals");
 
   const handleUnlockSeal = async (sealNumber: number, cipher: string) => {
     try {
@@ -45,62 +46,98 @@ export default function ChapterDetailPage() {
   const isAllUnlocked = unlockedSeals.length >= 3;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 flex flex-col space-y-8">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <Link href="/chapters" className="text-xs font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1.5 transition-colors">
-          <span>⬅️</span> Kembali ke Daftar Antologi
+    <div className="flex-1 flex flex-col space-y-3.5 py-1">
+      {/* Navigation Bar */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <Link href="/chapters" className="text-[11px] font-mono text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors">
+          <span>⬅️</span> Chapters
         </Link>
-        <div className="flex items-center gap-3 text-xs font-mono">
-          <span className="px-2.5 py-1 rounded bg-slate-800 text-amber-400 border border-slate-700">
+        <div className="flex items-center gap-2 text-[10px] font-mono">
+          <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700">
             {chapter.era}
           </span>
-          <span className="text-slate-500">•</span>
-          <span className="text-slate-400">{chapter.location}</span>
+          <span className="text-slate-400 truncate max-w-[120px]">{chapter.location}</span>
         </div>
       </div>
 
-      {/* Chapter Title Header */}
-      <div className="bg-occult-800/80 border border-slate-800 rounded-2xl p-6 sm:p-8 dossier-bg shadow-xl">
-        <div className="inline-block text-[11px] font-mono px-3 py-1 rounded bg-red-950/60 text-red-400 border border-red-800/40 uppercase tracking-widest mb-3">
-          Dossier Penyelidikan Aktif
+      {/* Chapter Title Mini Dossier */}
+      <div className="bg-occult-800/80 border border-slate-800 rounded-xl p-3.5 dossier-bg shadow-md">
+        <div className="inline-block text-[9px] font-mono px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/40 uppercase tracking-widest mb-1">
+          Dossier Aktif
         </div>
-        <h1 className="font-serif text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight">
+        <h1 className="font-serif text-base font-bold text-slate-100">
           {chapter.title}
         </h1>
-        <div className="text-sm text-red-400 font-serif italic mt-1">
-          "{chapter.latinTitle}" — {chapter.subtitle}
+        <div className="text-[11px] text-red-400 font-serif italic mt-0.5">
+          "{chapter.latinTitle}"
         </div>
-        <p className="text-slate-400 text-sm mt-3 max-w-4xl leading-relaxed">
+        <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2">
           {chapter.atmosphericDescription}
         </p>
       </div>
 
-      {/* Main Grid: Evidence Board & Seal Wheel + Relic Chest */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Evidence Board (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col space-y-8">
+      {/* Mobile Screen Tab Switcher */}
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
+        <button
+          onClick={() => setActiveScreenTab("seals")}
+          className={`py-2 rounded-lg text-center transition-all ${
+            activeScreenTab === "seals"
+              ? "bg-amber-950/70 border border-amber-500/60 text-amber-300 font-bold shadow"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          🔒 Segel ({unlockedSeals.length}/3)
+        </button>
+        <button
+          onClick={() => setActiveScreenTab("evidence")}
+          className={`py-2 rounded-lg text-center transition-all ${
+            activeScreenTab === "evidence"
+              ? "bg-amber-950/70 border border-amber-500/60 text-amber-300 font-bold shadow"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          📂 Bukti ({chapter.evidence.length})
+        </button>
+        <button
+          onClick={() => setActiveScreenTab("oracle")}
+          className={`py-2 rounded-lg text-center transition-all ${
+            activeScreenTab === "oracle"
+              ? "bg-amber-950/70 border border-amber-500/60 text-amber-300 font-bold shadow"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          🔮 Oracle
+        </button>
+      </div>
+
+      {/* Mobile Tab Content View */}
+      <div className="flex-1 flex flex-col space-y-3">
+        {activeScreenTab === "seals" && (
+          <div className="space-y-3.5">
+            <SealWheel
+              seals={chapter.seals}
+              unlockedSeals={unlockedSeals}
+              onUnlockSeal={handleUnlockSeal}
+              isAllUnlocked={isAllUnlocked}
+            />
+
+            <RelicChest
+              chestName={chapter.relicChestName}
+              chestDescription={chapter.relicChestDescription}
+              isUnlocked={isAllUnlocked}
+              chapterSlug={chapter.slug}
+              promoCode={chapter.voucherPromoCode}
+            />
+          </div>
+        )}
+
+        {activeScreenTab === "evidence" && (
           <EvidenceBoard evidenceList={chapter.evidence} />
+        )}
+
+        {activeScreenTab === "oracle" && (
           <OracleChat chapterTitle={chapter.title} loreFragments={chapter.loreFragments} />
-        </div>
-
-        {/* Right Column: 3 Seals Wheel & Relic Chest (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col space-y-8">
-          <SealWheel
-            seals={chapter.seals}
-            unlockedSeals={unlockedSeals}
-            onUnlockSeal={handleUnlockSeal}
-            isAllUnlocked={isAllUnlocked}
-          />
-
-          <RelicChest
-            chestName={chapter.relicChestName}
-            chestDescription={chapter.relicChestDescription}
-            isUnlocked={isAllUnlocked}
-            chapterSlug={chapter.slug}
-            promoCode={chapter.voucherPromoCode}
-          />
-        </div>
+        )}
       </div>
     </div>
   );
