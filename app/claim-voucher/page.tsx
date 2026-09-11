@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import MobileFrame from "@/app/components/MobileFrame";
 
 function ClaimVoucherContent() {
   const searchParams = useSearchParams();
@@ -95,8 +96,10 @@ function ClaimVoucherContent() {
 
 export default function ClaimVoucherPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-center font-mono text-slate-400 text-xs">Memuat portal klaim...</div>}>
-      <ClaimVoucherContent />
-    </Suspense>
+    <MobileFrame>
+      <Suspense fallback={<div className="p-6 text-center font-mono text-slate-400 text-xs">Memuat portal klaim...</div>}>
+        <ClaimVoucherContent />
+      </Suspense>
+    </MobileFrame>
   );
 }
