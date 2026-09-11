@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { CHAPTERS } from "@/data/chapters";
 import SealWheel from "./components/SealWheel";
 import EvidenceBoard from "./components/EvidenceBoard";
-import OracleChat from "./components/OracleChat";
 import RelicChest from "./components/RelicChest";
 import CountdownTimer from "@/app/components/CountdownTimer";
 import MobileFrame from "@/app/components/MobileFrame";
@@ -18,7 +17,7 @@ export default function ChapterDetailPage() {
   const chapter = CHAPTERS.find((c) => c.slug === slug || c.id === slug) || CHAPTERS[0];
 
   const [unlockedSeals, setUnlockedSeals] = useState<number[]>([]);
-  const [activeScreenTab, setActiveScreenTab] = useState<"seals" | "evidence" | "oracle">("seals");
+  const [activeScreenTab, setActiveScreenTab] = useState<"seals" | "evidence">("seals");
   const [chapterConfig, setChapterConfig] = useState<any>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
@@ -148,8 +147,8 @@ export default function ChapterDetailPage() {
           </div>
         ) : (
           <>
-            {/* Mobile Screen Tab Switcher */}
-            <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
+            {/* 2-Segmented Screen Tab Switcher (Seals & Evidence) */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
               <button
                 onClick={() => setActiveScreenTab("seals")}
                 className={`py-2 rounded-lg text-center transition-all ${
@@ -158,7 +157,7 @@ export default function ChapterDetailPage() {
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                🔒 Segel ({unlockedSeals.length}/3)
+                🔒 3 Segel Gaib ({unlockedSeals.length}/3)
               </button>
               <button
                 onClick={() => setActiveScreenTab("evidence")}
@@ -168,17 +167,7 @@ export default function ChapterDetailPage() {
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                📂 Bukti ({chapter.evidence.length})
-              </button>
-              <button
-                onClick={() => setActiveScreenTab("oracle")}
-                className={`py-2 rounded-lg text-center transition-all ${
-                  activeScreenTab === "oracle"
-                    ? "bg-amber-950/70 border border-amber-500/60 text-amber-300 font-bold shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                🔮 Oracle
+                📂 Berkas Bukti ({chapter.evidence.length})
               </button>
             </div>
 
@@ -205,10 +194,6 @@ export default function ChapterDetailPage() {
 
               {activeScreenTab === "evidence" && (
                 <EvidenceBoard evidenceList={chapter.evidence} />
-              )}
-
-              {activeScreenTab === "oracle" && (
-                <OracleChat chapterTitle={chapter.title} loreFragments={chapter.loreFragments} />
               )}
             </div>
           </>
